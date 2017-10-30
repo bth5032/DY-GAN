@@ -1,0 +1,8 @@
+#text output/large datafiles
+*.output 
+*.input
+
+#compiled 
+*.so
+*.d
+*.cxx
