@@ -14,8 +14,7 @@ from sklearn.model_selection import train_test_split
 
 import matplotlib.pyplot as plt
 
-
-import ROOT as r
+from physicsfuncs import M
 
 import sys
 import os
@@ -103,40 +102,9 @@ class GAN():
 
     def train(self, epochs, batch_size=128, save_interval=100):
 
-        # # Load the dataset
-        # # (X_train, _), (_, _) = mnist.load_data()
-        # # X_train = np.random.random((10000,8)).astype(np.float32)
-        # N = 100000
-        # col1 = 0.02*np.random.random(N)+1
-        # col2 = 0.02*np.random.random(N)+2
-        # col3 = 0.02*np.random.random(N)+3
-        # col4 = 0.02*np.random.random(N)+4
-        # col5 = 0.02*np.random.random(N)+5
-        # col6 = 0.02*np.random.random(N)+6
-        # col7 = 0.02*np.random.random(N)+7
-        # col8 = 0.02*np.random.random(N)+8
-        # X_train = np.c_[col1,col2,col3,col4,col5,col6,col7,col8].astype(np.float32)
-
-        # # X_train = np.loadtxt(open("coolio.txt", "r"), delimiter=",", skiprows=1)
-        # X_train = np.loadtxt(open("data_cartesian.csv", "r"), delimiter=",", skiprows=1)
-        # print X_train
-        # print X_train.shape
-
-        data = np.loadtxt(open("data_cartesian.csv", "r"), delimiter=",", skiprows=1)
+        data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
         X_train = data[:,range(1,1+8)]
         invmass_data = data[:,0]
-
-        # v1 = r.TLorentzVector()
-        # v2 = r.TLorentzVector()
-        # for img in X_train[np.random.randint(0, X_train.shape[0], 250)]:
-        #     v1.SetPtEtaPhiE(img[1],img[2],img[3],img[0])
-        #     v2.SetPtEtaPhiE(img[5],img[6],img[7],img[4])
-        #     print (v1+v2).M(), img
-        # # print gen_imgs
-
-        # # Rescale -1 to 1
-        # X_train = (X_train.astype(np.float32) - 127.5) / 127.5
-        # X_train = np.expand_dims(X_train, axis=3)
 
         half_batch = int(batch_size / 2)
 
@@ -184,62 +152,12 @@ class GAN():
     def save_imgs(self, epoch):
         noise = np.random.normal(0, 1, (1,8))
         gen_imgs = self.generator.predict(noise)
-        v1 = r.TLorentzVector()
-        v2 = r.TLorentzVector()
         img = gen_imgs[0]
-        v1.SetPtEtaPhiE(img[1],img[2],img[3],img[0])
-        v2.SetPtEtaPhiE(img[5],img[6],img[7],img[4])
-        print (v1+v2).M(), img
-        # print gen_imgs
-
-        # print(gen_imgs)
+        print M_ptetaphi(img), img
+        if epoch % 10000 == 0: 
+            self.generator.save("gen_%i.weights" % epoch)
 
 
 if __name__ == '__main__':
     gan = GAN()
-    gan.train(epochs=30000, batch_size=1024, save_interval=50)
-
-    # # data = np.loadtxt(open("data.csv", "r"), delimiter=",", skiprows=1)
-    # data = np.loadtxt(open("data_cartesian.csv", "r"), delimiter=",", skiprows=1)
-    # x_data = data[:,range(1,1+8)]
-    # y_data = data[:,0]
-    # print x_data.shape
-    # print y_data.shape
-
-    # x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size=0.33, random_state=42)
-
-    # batch_size = 512
-    # epochs = 9
-    # save_to = "model.h5"
-    # load_from = "model.h5"
-
-    # if load_from and os.path.exists(load_from):
-    #     model = load_model(load_from)
-    #     model.summary()
-    # else:
-    #     model = Sequential()
-
-    #     model.add(Dense(512, input_shape=output_shape,activation="tanh"))
-    #     model.add(Dense(1))
-
-    #     model.compile(loss='mean_squared_error',
-    #                   optimizer='adam',
-    #                   metrics=['accuracy'])
-    #     model.summary()
-        
-    #     model.fit(x_train, y_train,
-    #               batch_size=batch_size,
-    #               nb_epoch=epochs,
-    #               verbose=1,
-    #               callbacks=[TensorBoard(log_dir='/tmp/autoencoder')],
-    #               validation_data=(x_test, y_test))
-    #     if save_to:
-    #         model.save(save_to)
-
-
-
-    # # score = model.evaluate(x_test, y_test, batch_size=batch_size)
-    # print model.predict(x_test)
-    # print y_test
-    # # print score
-
+    gan.train(epochs=30000, batch_size=10000, save_interval=50)

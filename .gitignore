@@ -1,8 +1,13 @@
 #text output/large datafiles
 *.output 
 *.input
+*.weights
 
 #compiled 
 *.so
 *.d
 *.cxx
+*.pyc
+
+#virtualenv
+env/
