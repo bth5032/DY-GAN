@@ -153,7 +153,7 @@ class GAN():
         noise = np.random.normal(0, 1, (1,8))
         gen_imgs = self.generator.predict(noise)
         img = gen_imgs[0]
-        print M_ptetaphi(img), img
+        print M_ptetaphi(*img), img
         if epoch % 10000 == 0: 
             self.generator.save("gen_%i.weights" % epoch)
 
