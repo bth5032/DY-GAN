@@ -43,7 +43,7 @@ for line in f:
       momenta += [toks[4], toks[5], toks[6], toks[7]]
     
       if len(momenta) > 5:
-        print(",".join([M(momenta)]+momenta))
+        print(",".join([M_xyz(momenta)]+momenta))
   except Exception as e:
     print(e)
     print(line)

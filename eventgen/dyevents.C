@@ -12,6 +12,6 @@ void dyevents()
   //pt,eta,phi TString query = "genPart_pdgId:genPart_p4.E():genPart_p4.pt():genPart_p4.eta():genPart_p4.phi()";
   TString query = "genPart_pdgId:genPart_p4.E():genPart_p4.X():genPart_p4.Y():genPart_p4.Z()";
   TString selection = Form("genPart_status==1 && Sum$(genPart_status==1 && abs(genPart_pdgId)==%i && abs(genPart_motherId) == 23 )==2 && (abs(genPart_pdgId)==%i && abs(genPart_motherId) == 23)", pdgId, pdgId);
-  ch->GetEntries(selection);
-  //ch->Scan(query , selection);
+  //ch->GetEntries(selection);
+  ch->Scan(query , selection);
 }
