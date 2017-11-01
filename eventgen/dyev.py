@@ -17,7 +17,7 @@ def M(mom):
 def M_xyz(mom):
   E1,p1x,p1y,p1z,E2,p2x,p2y,p2z = map(float, mom)
   M = (E1+E2)**2 - (p1x+p2x)**2 - (p1y+p2y)**2 - (p1z+p2z)**2
-  return M
+  return str(math.sqrt(M))
 
 f=open("dyevts_xzy.input", "r")
 n=0
