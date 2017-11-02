@@ -12,8 +12,14 @@ from keras.callbacks import TensorBoard
 
 from sklearn.model_selection import train_test_split
 
+import sys
+sys.path.append("../")
+
+import plottery.plottery as ply
+import plottery.utils as plu
 import matplotlib.pyplot as plt
 
+import ROOT as r
 from physicsfuncs import M
 
 import sys
@@ -60,13 +66,15 @@ class GAN():
 
         model = Sequential()
 
-        model.add(Dense(64, input_shape=output_shape))
+        model.add(Dense(32, input_shape=output_shape))
+        model.add(Dense(64))
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dense(128))
         model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(128))
+        model.add(Dense(64))
         model.add(LeakyReLU(alpha=0.2))
-        # model.add(Dense(8, activation='tanh'))
+        model.add(Dense(32))
+        model.add(LeakyReLU(alpha=0.2))
         model.add(Dense(8))
 
         model.summary()
@@ -80,26 +88,20 @@ class GAN():
 
         model = Sequential()
 
-        model.add(Dense(128,activation="relu",input_shape=output_shape))
-        #model.add(ReLU(alpha=0.2))
-        model.add(Dense(128,activation="relu"))
-        #model.add(ReLU(alpha=0.2))
-        model.add(Dense(128,activation="relu"))
-        #model.add(ReLU(alpha=0.2))
-        model.add(Dense(128,activation="relu"))
-        #model.add(ReLU(alpha=0.2))
-        model.add(Dense(128,activation="relu"))
-        #model.add(ReLU(alpha=0.2))
-        model.add(Dense(128,activation="relu"))
-        #model.add(ReLU(alpha=0.2))
-        model.add(Dense(64,activation="relu"))
-        #model.add(ReLU(alpha=0.2))
-        model.add(Dense(32,activation="relu"))
-        #model.add(ReLU(alpha=0.2))
-        model.add(Dense(16,activation="relu"))
-        #model.add(ReLU(alpha=0.2))
-        model.add(Dense(8,activation="relu"))
-        #model.add(ReLU(alpha=0.2))
+        model.add(Dense(256,input_shape=output_shape))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dense(128))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dense(128))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dense(64))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dense(32))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dense(16))
+        model.add(LeakyReLU(alpha=0.2))
+        model.add(Dense(8))
+        model.add(LeakyReLU(alpha=0.2))
         model.add(Dense(1,activation='sigmoid'))
         model.summary()
 
@@ -108,9 +110,10 @@ class GAN():
 
         return Model(img, validity)
 
-    def train(self, epochs, batch_size=128, save_interval=100):
+    def train(self, epochs, batch_size=128):
 
-        data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
+        # data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
+        data = np.load("data_xyz.npy")
         X_train = data[:,range(1,1+8)]
         invmass_data = data[:,0]
 
@@ -127,6 +130,8 @@ class GAN():
             imgs = X_train[idx]
 
             noise = np.random.normal(0, 1, (half_batch, 8))
+
+            # noise = np.random.normal(1,0.003, (half_batch,8))*imgs
 
             # Generate a half batch of new images
             gen_imgs = self.generator.predict(noise)
@@ -154,15 +159,31 @@ class GAN():
             print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f] [tot loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss, g_loss+d_loss[0]))
 
             # If at save interval => save generated image samples
-            if epoch % save_interval == 0:
-                self.save_imgs(epoch)
+            self.save_imgs(epoch)
 
     def save_imgs(self, epoch):
-        if epoch % 50 == 0:
-            noise = np.random.normal(0, 1, (1,8))
+        if epoch % 20 == 0:
+            noise = np.random.normal(0, 1, (1000,8))
             gen_imgs = self.generator.predict(noise)
+            print gen_imgs
             masses=M(gen_imgs[:,0],gen_imgs[:,1],gen_imgs[:,2],gen_imgs[:,3],gen_imgs[:,4],gen_imgs[:,5],gen_imgs[:,6],gen_imgs[:,7])
-            print(masses, gen_imgs)
+            masses = masses[np.isfinite(masses)]
+            np.save("progress/pred_{}.npy".format(epoch), gen_imgs)
+            print masses.mean(), masses.std()
+            # h1 = r.TH1F("h1","masses",50,0,500)
+            # plu.fill_fast(h1, masses)
+            # if h1.Integral()>0.1:
+            #     h1.Scale(1./h1.Integral())
+            # ply.plot_hist(
+            #     bgs=[h1],
+            #     legend_labels = ["pred"],
+            #     options = {
+            #       "do_stack": False,
+            #       "yaxis_log": False,
+            #       "output_name": "masses.pdf",
+            #       "output_ic": True,
+            #       }
+            #     )
         if epoch % 10000 == 0: 
             noise = np.random.normal(0, 1, (10000,8))
             gen_imgs = self.generator.predict(noise)
@@ -172,5 +193,7 @@ class GAN():
 
 
 if __name__ == '__main__':
+    os.system("mkdir progress")
+
     gan = GAN()
-    gan.train(epochs=100002, batch_size=10000, save_interval=50)
+    gan.train(epochs=100002, batch_size=10000)
