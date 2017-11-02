@@ -80,19 +80,27 @@ class GAN():
 
         model = Sequential()
 
-        model.add(Dense(64,input_shape=output_shape))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(128))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(64))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(32))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(16))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(8))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(1, activation='sigmoid'))
+        model.add(Dense(128,activation="relu",input_shape=output_shape))
+        #model.add(ReLU(alpha=0.2))
+        model.add(Dense(128,activation="relu"))
+        #model.add(ReLU(alpha=0.2))
+        model.add(Dense(128,activation="relu"))
+        #model.add(ReLU(alpha=0.2))
+        model.add(Dense(128,activation="relu"))
+        #model.add(ReLU(alpha=0.2))
+        model.add(Dense(128,activation="relu"))
+        #model.add(ReLU(alpha=0.2))
+        model.add(Dense(128,activation="relu"))
+        #model.add(ReLU(alpha=0.2))
+        model.add(Dense(64,activation="relu"))
+        #model.add(ReLU(alpha=0.2))
+        model.add(Dense(32,activation="relu"))
+        #model.add(ReLU(alpha=0.2))
+        model.add(Dense(16,activation="relu"))
+        #model.add(ReLU(alpha=0.2))
+        model.add(Dense(8,activation="relu"))
+        #model.add(ReLU(alpha=0.2))
+        model.add(Dense(1,activation='sigmoid'))
         model.summary()
 
         img = Input(shape=output_shape)
@@ -150,14 +158,19 @@ class GAN():
                 self.save_imgs(epoch)
 
     def save_imgs(self, epoch):
-        noise = np.random.normal(0, 1, (1,8))
-        gen_imgs = self.generator.predict(noise)
-        img = gen_imgs[0]
-        print M_ptetaphi(*img), img
+        if epoch % 50 == 0:
+            noise = np.random.normal(0, 1, (1,8))
+            gen_imgs = self.generator.predict(noise)
+            masses=M(gen_imgs[:,0],gen_imgs[:,1],gen_imgs[:,2],gen_imgs[:,3],gen_imgs[:,4],gen_imgs[:,5],gen_imgs[:,6],gen_imgs[:,7])
+            print(masses, gen_imgs)
         if epoch % 10000 == 0: 
+            noise = np.random.normal(0, 1, (10000,8))
+            gen_imgs = self.generator.predict(noise)
+            masses=M(gen_imgs[:,0],gen_imgs[:,1],gen_imgs[:,2],gen_imgs[:,3],gen_imgs[:,4],gen_imgs[:,5],gen_imgs[:,6],gen_imgs[:,7])
+            print("mean: %s, std: %s " % (masses.mean(), masses.std()))
             self.generator.save("gen_%i.weights" % epoch)
 
 
 if __name__ == '__main__':
     gan = GAN()
-    gan.train(epochs=30000, batch_size=10000, save_interval=50)
+    gan.train(epochs=100002, batch_size=10000, save_interval=50)
