@@ -15,6 +15,7 @@ env/
 #File System Crap
 *.DS_Store
 
-#Old models
+#Old models and binaries related to progress
 gan/performance/
 old_models/
+*.npy
