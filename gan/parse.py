@@ -4,7 +4,7 @@ import glob
 
 import ROOT as r
 
-import sys
+import sys, os
 sys.path.append("../")
 
 import plottery.plottery as ply
@@ -27,7 +27,21 @@ def get_quantities(fname):
             }
 
 # fname = "progress/pred_80.npy"
-fnames = glob.glob("progress/v1/*npy")
+# fnames = glob.glob("progress/v1/*npy")
+
+model_name=None
+#Check for a model in model/ (a directory starting with model_)
+if (os.listdir("model/")):
+  model_name=filter(lambda x: "model_" in x, os.listdir("model/"))[0]
+#If no directory exists, exit, no model can be found
+if not model_name:
+  print("No model found in model/, please copy one over from old_models or run gan.py to generate a model")
+  exit(1)
+else:
+  print("Making plots for model in directory: %s" % model_name)
+fnames=map(lambda y: "model/"+model_name+"/"+y, filter(lambda x: (".npy" in x), os.listdir("model/"+model_name)))
+
+
 # fnames = glob.glob("progress/*npy")
 points_mz = []
 points_zpt = []
@@ -45,7 +59,8 @@ for fname in fnames:
     points_phis.append([quantities["epoch"], quantities["phis"].mean(), quantities["phis"].std()])
     points_dphis.append([quantities["epoch"], quantities["dphis"].mean(), quantities["dphis"].std()])
 
-data = np.load("data_xyz.npy")
+#data = np.load("data_xyz.npy")
+data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
 mZs = data[:,0]
 
 zpz = Z_pZ(data[:,range(1,9)])
@@ -78,13 +93,13 @@ def make_plot(points, truth_cent, truth_std, label_truth, label_pred, fname):
                 "legend_scalex": 0.7,
                 "xaxis_label": "epoch",
                 "yaxis_label": label_pred,
-                "output_name": "test.pdf",
-                "output_ic": True,
+                "output_name": fname,
+                #"output_ic": True,
                 }
             )
 
-make_plot(points_mz, mZs.mean(),mZs.std(), "m_{Z}", "#mu(inv. mass)", "test.pdf")
-make_plot(points_zpt, zpt.mean(),zpt.std(), "p_{T}^{Z}", "p_{T}^{Z} generated", "test.pdf")
-make_plot(points_zpz, zpz.mean(),zpz.std(), "p_{z}^{Z}", "p_{z}^{Z} generated", "test.pdf")
-make_plot(points_phis, phis.mean(),phis.std(), "#phi(lep)", "#phi(lep) generated", "test.pdf")
-make_plot(points_dphis, dphis.mean(),dphis.std(), "#delta#phi(l1,l2)", "#delta#phi(l1,l2) generated", "test.pdf")
+make_plot(points_mz, mZs.mean(),mZs.std(), "m_{Z}", "#mu(inv. mass)", "model/"+model_name+"/dilmass.pdf")
+make_plot(points_zpt, zpt.mean(),zpt.std(), "p_{T}^{Z}", "p_{T}^{Z} generated", "model/"+model_name+"/dilpt.pdf")
+make_plot(points_zpz, zpz.mean(),zpz.std(), "p_{z}^{Z}", "p_{z}^{Z} generated", "model/"+model_name+"/dilpz.pdf")
+make_plot(points_phis, phis.mean(),phis.std(), "#phi(lep)", "#phi(lep) generated", "model/"+model_name+"/lep_phi.pdf")
+make_plot(points_dphis, dphis.mean(),dphis.std(), "#delta#phi(l1,l2)", "#delta#phi(l1,l2) generated", "model/"+model_name+"/lep_dphi.pdf")
