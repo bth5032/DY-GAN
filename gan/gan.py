@@ -110,7 +110,7 @@ class GAN():
 
         return Model(img, validity)
 
-    def train(self, epochs, batch_size=128):
+    def train(self, epochs, batch_size=128, tag=""):
 
         # data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
         data = np.load("data_xyz.npy")
@@ -159,41 +159,27 @@ class GAN():
             print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f] [tot loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss, g_loss+d_loss[0]))
 
             # If at save interval => save generated image samples
-            self.save_imgs(epoch)
+            self.save_imgs(epoch,tag=tag)
 
-    def save_imgs(self, epoch):
+    def save_imgs(self, epoch,tag):
         if epoch % 20 == 0:
             noise = np.random.normal(0, 1, (1000,8))
             gen_imgs = self.generator.predict(noise)
-            print gen_imgs
             masses=M(gen_imgs[:,0],gen_imgs[:,1],gen_imgs[:,2],gen_imgs[:,3],gen_imgs[:,4],gen_imgs[:,5],gen_imgs[:,6],gen_imgs[:,7])
             masses = masses[np.isfinite(masses)]
-            np.save("progress/pred_{}.npy".format(epoch), gen_imgs)
+            np.save("progress/{}/pred_{}.npy".format(tag,epoch), gen_imgs)
             print masses.mean(), masses.std()
-            # h1 = r.TH1F("h1","masses",50,0,500)
-            # plu.fill_fast(h1, masses)
-            # if h1.Integral()>0.1:
-            #     h1.Scale(1./h1.Integral())
-            # ply.plot_hist(
-            #     bgs=[h1],
-            #     legend_labels = ["pred"],
-            #     options = {
-            #       "do_stack": False,
-            #       "yaxis_log": False,
-            #       "output_name": "masses.pdf",
-            #       "output_ic": True,
-            #       }
-            #     )
         if epoch % 10000 == 0: 
             noise = np.random.normal(0, 1, (10000,8))
             gen_imgs = self.generator.predict(noise)
             masses=M(gen_imgs[:,0],gen_imgs[:,1],gen_imgs[:,2],gen_imgs[:,3],gen_imgs[:,4],gen_imgs[:,5],gen_imgs[:,6],gen_imgs[:,7])
             print("mean: %s, std: %s " % (masses.mean(), masses.std()))
-            self.generator.save("gen_%i.weights" % epoch)
+            self.generator.save("progress/{}/gen_{}.weights".format(tag,epoch))
 
 
 if __name__ == '__main__':
-    os.system("mkdir progress")
+    tag = "v1adam"
+    os.system("mkdir progress/{}/".format(tag))
 
     gan = GAN()
-    gan.train(epochs=100002, batch_size=10000)
+    gan.train(epochs=100002, batch_size=20000, tag=tag)
