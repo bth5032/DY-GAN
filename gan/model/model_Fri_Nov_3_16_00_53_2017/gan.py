@@ -197,12 +197,8 @@ class GAN():
 if __name__ == '__main__':
     ## All this just handles saving all your old models...
     
-    old_model_name=None
-    #Check if old model exists    
+    #check if old model exists
     if (os.listdir("model/")):
-        #Check for a model in model/ (a directory starting with model_)
-        old_model_name=filter(lambda x: "model_" in x, os.listdir("model/"))[0]
-    if old_model_name:
         #if so, move it into old models
         old_name=os.listdir("model/")[0]
         os.rename("model/"+old_name, "old_models/"+old_name)
