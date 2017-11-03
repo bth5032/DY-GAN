@@ -1,3 +1,4 @@
 [submodule "plottery"]
 	path = plottery
 	url = http://github.com/aminnj/plottery.git
+        ignore = untracked
