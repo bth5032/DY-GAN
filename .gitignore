@@ -11,3 +11,10 @@
 
 #virtualenv
 env/
+
+#File System Crap
+*.DS_Store
+
+#Old models
+gan/performance/
+old_models/
