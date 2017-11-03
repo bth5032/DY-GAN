@@ -12,8 +12,14 @@ from keras.callbacks import TensorBoard
 
 from sklearn.model_selection import train_test_split
 
+import sys
+sys.path.append("../")
+
+import plottery.plottery as ply
+import plottery.utils as plu
 import matplotlib.pyplot as plt
 
+import ROOT as r
 from physicsfuncs import M
 
 import sys, os, time
@@ -70,9 +76,10 @@ class GAN():
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dense(128))
         model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(128))
+        model.add(Dense(64))
         model.add(LeakyReLU(alpha=0.2))
-        # model.add(Dense(8, activation='tanh'))
+        model.add(Dense(32))
+        model.add(LeakyReLU(alpha=0.2))
         model.add(Dense(8))
 
         model.summary()
@@ -124,8 +131,7 @@ class GAN():
 
         return Model(img, validity)
 
-    def train(self, epochs, batch_size=128, save_interval=100):
-
+    def train(self, epochs, batch_size=128, save_interval=20):
         data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
         X_train = data[:,range(1,1+8)]
         invmass_data = data[:,0]
@@ -144,6 +150,8 @@ class GAN():
             noise = np.random.normal(0, 1, (half_batch,input_shape[0]-truth_bias.shape[1]))
             gen_input=np.c_[noise, truth_bias]
             #noise = np.random.normal(0, 1, (half_batch, input_shape[0] - ))
+
+            # noise = np.random.normal(1,0.003, (half_batch,8))*imgs
 
             # Generate a half batch of new images
             gen_output = self.generator.predict(gen_input)
@@ -183,16 +191,12 @@ class GAN():
                 self.save_imgs(epoch, gen_input_extra)
 
     def save_imgs(self, epoch, gen_input):
-        if epoch % 50 == 0:
-            gen_imgs = self.generator.predict(gen_input)
-            masses=M(gen_imgs[:,0],gen_imgs[:,1],gen_imgs[:,2],gen_imgs[:,3],gen_imgs[:,4],gen_imgs[:,5],gen_imgs[:,6],gen_imgs[:,7])
-            print(masses, gen_input)
-        if epoch % 10000 == 0: 
-            gen_imgs = self.generator.predict(gen_input)
-            masses=M(gen_imgs[:,0],gen_imgs[:,1],gen_imgs[:,2],gen_imgs[:,3],gen_imgs[:,4],gen_imgs[:,5],gen_imgs[:,6],gen_imgs[:,7])
-            print("mean: %s, std: %s " % (masses.mean(), masses.std()))
+        gen_output = self.generator.predict(gen_input)
+        masses=M(gen_output[:,0],gen_output[:,1],gen_output[:,2],gen_output[:,3],gen_output[:,4],gen_output[:,5],gen_output[:,6],gen_output[:,7])
+        print(masses.mean(), masses.std())
+        np.save(output_dir+"/pred_%s.npy" % epoch, gen_output)
+        if epoch % 2000 == 0: 
             self.generator.save("%s/gen_%i.weights" % (self.output_dir, epoch))
-
 
 if __name__ == '__main__':
     ## All this just handles saving all your old models...
@@ -215,4 +219,5 @@ if __name__ == '__main__':
     os.system("cp gan.py %s" % output_dir)
 
     gan = GAN(output_dir)
-    gan.train(epochs=100002, batch_size=10000, save_interval=50)
+    gan.train(epochs=100002, batch_size=10000, save_interval=20)
+
