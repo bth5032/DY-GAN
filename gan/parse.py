@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     #Check for a model in model/ (a directory starting with model_)
     print("Making plots for model in directory: %s" % model_dir)
-    fnames=map(lambda y: model_dir+y, sorted(filter(lambda x: ".npy" in x, os.listdir(model_dir))))
+    fnames=map(lambda y: model_dir+"/"+y, sorted(filter(lambda x: ".npy" in x, os.listdir(model_dir))))
     
     # fname = "progress/pred_80.npy"
     # fnames = glob.glob("progress/v1/*npy")
@@ -115,8 +115,8 @@ if __name__ == "__main__":
     # Make Plots
     ##------------------------------------------------
 
-    makePlot(points_mz, mZs.mean(),mZs.std(), "m_{Z}", "#mu(inv. mass)", "model/"+model_name+"/dilmass.pdf")
-    makePlot(points_zpt, zpt.mean(),zpt.std(), "p_{T}^{Z}", "p_{T}^{Z} generated", "model/"+model_name+"/dilpt.pdf")
-    makePlot(points_zpz, zpz.mean(),zpz.std(), "p_{z}^{Z}", "p_{z}^{Z} generated", "model/"+model_name+"/dilpz.pdf")
-    makePlot(points_phis, phis.mean(),phis.std(), "#phi(lep)", "#phi(lep) generated", "model/"+model_name+"/lep_phi.pdf")
-    makePlot(points_dphis, dphis.mean(),dphis.std(), "#delta#phi(l1,l2)", "#delta#phi(l1,l2) generated", "model/"+model_name+"/lep_dphi.pdf")
+    makePlot(points_mz, mZs.mean(),mZs.std(), "m_{Z}", "#mu(inv. mass)", model_dir+"/dilmass.pdf")
+    makePlot(points_zpt, zpt.mean(),zpt.std(), "p_{T}^{Z}", "p_{T}^{Z} generated", model_dir+"/dilpt.pdf")
+    makePlot(points_zpz, zpz.mean(),zpz.std(), "p_{z}^{Z}", "p_{z}^{Z} generated", model_dir+"/dilpz.pdf")
+    makePlot(points_phis, phis.mean(),phis.std(), "#phi(lep)", "#phi(lep) generated", model_dir+"/lep_phi.pdf")
+    makePlot(points_dphis, dphis.mean(),dphis.std(), "#delta#phi(l1,l2)", "#delta#phi(l1,l2) generated", model_dir+"/lep_dphi.pdf")

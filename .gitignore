@@ -19,3 +19,4 @@ env/
 gan/performance/
 old_models/
 *.npy
+*.root
