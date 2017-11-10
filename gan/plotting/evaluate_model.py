@@ -32,7 +32,7 @@ def get_quantities(data):
 Ngen = 100000
 
 # model_fname = "../gen_90000.weights"
-model_fname = "../progress/vnonoise/gen_10000.weights"
+model_fname = "../progress/vdecaynoise///gen_10000.weights"
 model = load_model(model_fname)
 data = np.load("../data_xyz.npy")
 real = data[:,range(1,1+8)]

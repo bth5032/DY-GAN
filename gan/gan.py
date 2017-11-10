@@ -23,6 +23,7 @@ sys.path.append("../")
 import plottery.plottery as ply
 import plottery.utils as plu
 import matplotlib.pyplot as plt
+import watch
 
 import ROOT as r
 from physicsfuncs import M
@@ -36,7 +37,7 @@ output_shape = (8,)
 input_shape = (8,)
 
 d_epochinfo = {}
-# ss = MinMaxScaler(feature_range=(-0.5, 0.5))
+# ss = MinMaxScaler(feature_range=(-1.,1.))
 # ss = RobustScaler()
 # ss = SymLogScaler()
 # ss = StandardScaler()
@@ -48,17 +49,20 @@ class GAN():
         self.channels = 1
 
         # optimizer = Adam(0.0002, 0.5)
-        optimizer = "adadelta"
+        optimizer_d = "adadelta"
+        # optimizer_d = "sgd"
+        optimizer_g = "adadelta"
+        # optimizer_g = "adam"
 
         # Build and compile the discriminator
         self.discriminator = self.build_discriminator()
         self.discriminator.compile(loss='binary_crossentropy', 
-            optimizer=optimizer,
+            optimizer=optimizer_d,
             metrics=['accuracy'])
 
         # Build and compile the generator
         self.generator = self.build_generator()
-        self.generator.compile(loss='binary_crossentropy', optimizer=optimizer)
+        self.generator.compile(loss='binary_crossentropy', optimizer=optimizer_g)
 
         # The generator takes noise as input and generated imgs
         z = Input(shape=input_shape)
@@ -73,7 +77,7 @@ class GAN():
         # The combined model  (stacked generator and discriminator) takes
         # noise as input => generates images => determines validity 
         self.combined = Model(z, valid)
-        self.combined.compile(loss='binary_crossentropy', optimizer=optimizer)
+        self.combined.compile(loss='binary_crossentropy', optimizer=optimizer_g)
 
     def build_generator(self):
 
@@ -90,7 +94,7 @@ class GAN():
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dense(32))
         model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(8))
+        model.add(Dense(input_shape[0]))
 
         model.summary()
 
@@ -131,9 +135,9 @@ class GAN():
         X_train = data[:,range(1,1+8)]
         invmass_data = data[:,0]
 
-        # NOTE. StandardScaler should be fit on training set
-        # and applied the same to train and test, otherwise we 
-        # introduce a bias
+        # # NOTE. StandardScaler should be fit on training set
+        # # and applied the same to train and test, otherwise we 
+        # # introduce a bias
         # ss.fit(X_train)
 
         # import pickle
@@ -177,7 +181,8 @@ class GAN():
             noise_half = np.random.normal(0, 1, (half_batch, input_shape[0]))
             noise_full = np.random.normal(0, 1, (batch_size, input_shape[0]))
 
-            # noise = np.random.normal(1,0.003, (half_batch,8))*imgs
+            # noise_half = np.random.uniform(-1, 1, (half_batch, input_shape[0]))
+            # noise_full = np.random.uniform(-1, 1, (batch_size, input_shape[0]))
 
             # Generate a half batch of new images
             gen_imgs = self.generator.predict(noise_half)
@@ -213,7 +218,7 @@ class GAN():
             # Plot the progress
             print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
 
-            if epoch % 20 == 0:
+            if epoch % 100 == 0:
 
                 noise = np.random.normal(0, 1, (5000,input_shape[0]))
                 gen_imgs = self.generator.predict(noise)
@@ -240,6 +245,12 @@ class GAN():
                 np.save("progress/{}/pred_{}.npy".format(tag,epoch), gen_imgs)
                 pickle.dump(d_epochinfo, open("progress/{}/history.pkl".format(tag),'w'))
 
+            if epoch % 200 == 0:
+                fname = "progress/{}/history.pkl".format(tag)
+                watch.update(fname)
+
+
+
             if epoch % 10000 == 0: 
                 noise = np.random.normal(0, 1, (10000,input_shape[0]))
                 gen_imgs = self.generator.predict(noise)
@@ -251,8 +262,10 @@ class GAN():
 if __name__ == '__main__':
     # tag = "v1noise2"
     # tag = "v1noise1"
-    tag = "vdecaynoise"
+    # tag = "vdecaynoise"
+    tag = "vdecayminmax"
     os.system("mkdir -p progress/{}/".format(tag))
+    os.system("cp gan.py progress/{}/".format(tag))
 
     gan = GAN()
     # gan.train(epochs=100002, batch_size=10000, tag=tag)

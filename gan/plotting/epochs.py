@@ -26,7 +26,7 @@ def get_quantities(fname):
             }
 
 # fnames = glob.glob("../progress/vtestadam/*npy")
-fnames = glob.glob("../progress/vscale//*npy")
+fnames = glob.glob("../progress/vdecaynoise/npy")
 data = np.load("../data_xyz.npy")
 
 
