@@ -1,0 +1,137 @@
+<html>
+    <head>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script type="text/javascript" src="data.js"></script>
+    </head>
+
+
+    <body>
+        <!-- <div id="chart_div"></div> -->
+        <canvas id="myChart" width="800" height="500"></canvas>
+        <script>
+
+
+var getEMA = (a,r) => a.reduce((p,n,i) => i ? p.concat(2*n/(r+1) + p[p.length-1]*(r-1)/(r+1)) : p, [a[0]]);
+
+function transform(data) {
+    return getEMA(data, 10);
+}
+
+var ctx = document.getElementById("myChart").getContext('2d');
+var myChart = new Chart(ctx, {
+    type: 'line',
+    title:{
+        text: "Multiple Y Axis"
+    },
+    data: {
+        labels: info["epoch"],
+        // labels: [new Date(), new Date(), new Date()],
+        datasets: [
+        {
+            fill: false,
+            borderColor: "#2EC4B6",
+            backgroundColor: "#2EC4B6",
+            label: 'Discriminator loss',
+            data: transform(info["d_loss"]),
+            borderWidth: 2,
+            pointRadius: 0,
+            yAxisID: 'A',
+        },
+        {
+            fill: false,
+            borderColor: "#1E7D74",
+            backgroundColor: "#1E7D74",
+            label: 'Generator loss',
+            data: transform(info["g_loss"]),
+            borderWidth: 2,
+            pointRadius: 0,
+            yAxisID: 'A',
+        },
+        {
+            fill: false,
+            borderColor: "#FF9F1C",
+            backgroundColor: "#FF9F1C",
+            label: 'Discriminator accuracy',
+            data: transform(info["d_acc"]),
+            borderWidth: 2,
+            pointRadius: 0,
+            yAxisID: 'B',
+        },
+        {
+            fill: false,
+            borderColor: "#ED5A6C",
+            backgroundColor: "#ED5A6C",
+            label: 'mass_mu',
+            data: transform(info["mass_mu"]),
+            borderWidth: 2,
+            pointRadius: 0,
+            axisYIndex: 1,
+            yAxisID: 'B',
+        },
+        {
+            fill: false,
+            borderColor: "#E71D36",
+            backgroundColor: "#E71D36",
+            label: 'mass_sig',
+            data: transform(info["mass_sig"]),
+            borderWidth: 2,
+            pointRadius: 0,
+            axisYIndex: 1,
+            yAxisID: 'B',
+        },
+        ]
+    },
+    options: {
+        responsive: false,
+        scales: {
+            yAxes: [
+                {
+                    id: "A",
+                    type: "linear",
+                    position:"left",
+                    ticks: {
+                        beginAtZero:true
+                    }
+                },
+                {
+                    id: "B",
+                    type: "linear",
+                    position:"right",
+                    ticks: {
+                        beginAtZero:false
+                    }
+                },
+            ]
+        },
+        elements: {
+            line: {
+                tension: 0, // disables bezier curves
+            },
+        },
+    }
+});
+
+function update() {
+    function reload_js(src) {
+        $('script[src="' + src + '"]').remove();
+        $('<script>').attr('src', src).appendTo('head');
+    }
+    reload_js("data.js");
+
+    myChart.data.labels = info["epoch"];
+    console.log(myChart.data.labels.length);
+    myChart.data.datasets[0].data = transform(info["d_loss"]);
+    myChart.data.datasets[1].data = transform(info["g_loss"]);
+    myChart.data.datasets[2].data = transform(info["d_acc"]);
+    myChart.data.datasets[3].data = transform(info["mass_mu"]);
+    myChart.data.datasets[4].data = transform(info["mass_sig"]);
+    myChart.update();
+
+}
+
+setInterval(update,30000);
+
+        </script>
+    </body>
+</html>

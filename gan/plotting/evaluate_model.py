@@ -5,6 +5,7 @@ import os
 import numpy as np
 from physicsfuncs import *
 import glob
+import pickle
 
 import ROOT as r
 from keras.models import Sequential, Model, load_model
@@ -30,7 +31,8 @@ def get_quantities(data):
 
 Ngen = 100000
 
-model_fname = "../gen_100000.weights"
+# model_fname = "../gen_90000.weights"
+model_fname = "../progress/vnonoise/gen_10000.weights"
 model = load_model(model_fname)
 data = np.load("../data_xyz.npy")
 real = data[:,range(1,1+8)]
@@ -49,6 +51,9 @@ else:
 
 
 gen = model.predict(noise)
+
+# ss = pickle.load(open('../scaler.sav', 'rb'))
+# gen = ss.inverse_transform(gen)
 
 quantities_gen = get_quantities(gen)
 quantities_real = get_quantities(real)

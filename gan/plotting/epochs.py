@@ -25,8 +25,10 @@ def get_quantities(fname):
             "detas": get_detas(data),
             }
 
-fnames = glob.glob("../progress/vtestadam/*npy")
+# fnames = glob.glob("../progress/vtestadam/*npy")
+fnames = glob.glob("../progress/vscale//*npy")
 data = np.load("../data_xyz.npy")
+
 
 points_mz = []
 points_zpt = []
@@ -35,6 +37,7 @@ points_phis = []
 points_dphis = []
 points_etas = []
 points_detas = []
+fnames = sorted(fnames, key=lambda x:int(x.rsplit("_",1)[-1].split(".")[0]))
 for fname in fnames:
     quantities = get_quantities(fname)
     if not np.isfinite(quantities["masses"].mean()): continue

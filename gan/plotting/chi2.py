@@ -25,7 +25,8 @@ def get_quantities(data):
             "deta": get_detas(data),
             }
 
-fnames = glob.glob("../progress/adam40k/*npy")
+# fnames = glob.glob("../progress/adam40k/*npy")
+fnames = glob.glob("../progress/vtest/*npy")
 data = np.load("../data_xyz.npy")
 
 quantities_real = get_quantities(data[:,range(1,9)])
