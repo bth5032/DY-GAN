@@ -44,6 +44,14 @@ def getTrueDists(truth_4vecs, truth_masses):
     ztheta = f.Get("h_true_ztheta")
     zphi   = f.Get("h_true_zphi")
 
+    mass   .SetDirectory(0)
+    zpt    .SetDirectory(0)
+    zpx    .SetDirectory(0)
+    zpy    .SetDirectory(0)
+    zpz    .SetDirectory(0)
+    ztheta .SetDirectory(0)
+    zphi   .SetDirectory(0)
+
     f.Close()
   else:
     print("No ROOT file for true values found, computing...")
@@ -164,6 +172,9 @@ def generatePlots(model_dir, ngen_samples=50000):
 
     true_dists=getTrueDists(truth_4vecs, truth_masses)
 
+    model_name=saved_model[:saved_model.index("gen_")]
+    epoch=saved_model[saved_model.index("gen_")+4:saved_model.index(".weights")]
+
     ply.plot_hist(
         bgs=[h_mass,true_dists["mass"]],
         legend_labels = ["pred", "truth"],
@@ -171,17 +182,17 @@ def generatePlots(model_dir, ngen_samples=50000):
     	"do_stack": False,
     	"yaxis_log": False,
     	#"ratio_numden_indices": [1,0],
-    	"output_name": "%s/masses_epoch_%s.pdf" % (saved_model[:saved_model.index("gen_")], saved_model[saved_model.index("gen_")+4:saved_model.index(".weights")]),
+    	"output_name": "%s/masses_epoch_%s.pdf" % (model_name, epoch),
     	}
         )
-    ply.plot_hist(
+    """ply.plot_hist(
         bgs=[h_zpt,true_dists["zpt"]],
         legend_labels = ["pred", "truth"],
         options = {
       "do_stack": False,
       "yaxis_log": False,
       #"ratio_numden_indices": [1,0],
-      "output_name": "%s/zpt_epoch_%s.pdf" % (saved_model[:saved_model.index("gen_")], saved_model[saved_model.index("gen_")+4:saved_model.index(".weights")]),
+      "output_name": "%s/zpt_epoch_%s.pdf" % (model_name, epoch),
       }
         )
     ply.plot_hist(
@@ -191,7 +202,7 @@ def generatePlots(model_dir, ngen_samples=50000):
       "do_stack": False,
       "yaxis_log": False,
       #"ratio_numden_indices": [1,0],
-      "output_name": "%s/zpx_epoch_%s.pdf" % (saved_model[:saved_model.index("gen_")], saved_model[saved_model.index("gen_")+4:saved_model.index(".weights")]),
+      "output_name": "%s/zpx_epoch_%s.pdf" % (model_name, epoch),
       }
         )
     ply.plot_hist(
@@ -201,7 +212,7 @@ def generatePlots(model_dir, ngen_samples=50000):
       "do_stack": False,
       "yaxis_log": False,
       #"ratio_numden_indices": [1,0],
-      "output_name": "%s/zpy_epoch_%s.pdf" % (saved_model[:saved_model.index("gen_")], saved_model[saved_model.index("gen_")+4:saved_model.index(".weights")]),
+      "output_name": "%s/zpy_epoch_%s.pdf" % (model_name, epoch),
       }
         )
     ply.plot_hist(
@@ -211,7 +222,7 @@ def generatePlots(model_dir, ngen_samples=50000):
       "do_stack": False,
       "yaxis_log": False,
       #"ratio_numden_indices": [1,0],
-      "output_name": "%s/zpz_epoch_%s.pdf" % (saved_model[:saved_model.index("gen_")], saved_model[saved_model.index("gen_")+4:saved_model.index(".weights")]),
+      "output_name": "%s/zpz_epoch_%s.pdf" % (model_name, epoch),
       }
         )
     ply.plot_hist(
@@ -221,7 +232,7 @@ def generatePlots(model_dir, ngen_samples=50000):
       "do_stack": False,
       "yaxis_log": False,
       #"ratio_numden_indices": [1,0],
-      "output_name": "%s/ztheta_epoch_%s.pdf" % (saved_model[:saved_model.index("gen_")], saved_model[saved_model.index("gen_")+4:saved_model.index(".weights")]),
+      "output_name": "%s/ztheta_epoch_%s.pdf" % (model_name, epoch),
       }
         )
     ply.plot_hist(
@@ -231,9 +242,9 @@ def generatePlots(model_dir, ngen_samples=50000):
       "do_stack": False,
       "yaxis_log": False,
       #"ratio_numden_indices": [1,0],
-      "output_name": "%s/zphi_epoch_%s.pdf" % (saved_model[:saved_model.index("gen_")], saved_model[saved_model.index("gen_")+4:saved_model.index(".weights")]),
+      "output_name": "%s/zphi_epoch_%s.pdf" % (model_name, epoch),
       }
-        )
+        )"""
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(add_help=False)
