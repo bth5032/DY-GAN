@@ -15,7 +15,8 @@
 var getEMA = (a,r) => a.reduce((p,n,i) => i ? p.concat(2*n/(r+1) + p[p.length-1]*(r-1)/(r+1)) : p, [a[0]]);
 
 function transform(data) {
-    return getEMA(data, 10);
+    return getEMA(data, 5);
+    // return data;
 }
 
 var ctx = document.getElementById("myChart").getContext('2d');
@@ -44,6 +45,26 @@ var myChart = new Chart(ctx, {
             backgroundColor: "#1E7D74",
             label: 'Generator loss',
             data: transform(info["g_loss"]),
+            borderWidth: 2,
+            pointRadius: 0,
+            yAxisID: 'A',
+        },
+        {
+            fill: false,
+            borderColor: "#4a0899",
+            backgroundColor: "#4a0899",
+            label: 'Metric1',
+            data: transform(info["metric1"]),
+            borderWidth: 2,
+            pointRadius: 0,
+            yAxisID: 'A',
+        },
+        {
+            fill: false,
+            borderColor: "#896d4d",
+            backgroundColor: "#896d4d",
+            label: 'Metric2',
+            data: transform(info["metric2"]),
             borderWidth: 2,
             pointRadius: 0,
             yAxisID: 'A',
@@ -123,9 +144,11 @@ function update() {
     console.log(myChart.data.labels.length);
     myChart.data.datasets[0].data = transform(info["d_loss"]);
     myChart.data.datasets[1].data = transform(info["g_loss"]);
-    myChart.data.datasets[2].data = transform(info["d_acc"]);
-    myChart.data.datasets[3].data = transform(info["mass_mu"]);
-    myChart.data.datasets[4].data = transform(info["mass_sig"]);
+    myChart.data.datasets[2].data = transform(info["metric1"]);
+    myChart.data.datasets[3].data = transform(info["metric2"]);
+    myChart.data.datasets[4].data = transform(info["d_acc"]);
+    myChart.data.datasets[5].data = transform(info["mass_mu"]);
+    myChart.data.datasets[6].data = transform(info["mass_sig"]);
     myChart.update();
 
 }
