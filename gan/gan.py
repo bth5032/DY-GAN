@@ -2,11 +2,13 @@
 
 import os
 import tensorflow as tf
+tf.set_random_seed(42)
+# if "USE_ONE_CPU" in os.environ or True:
 if "USE_ONE_CPU" in os.environ:
     print ">>> using one CPU"
     config = tf.ConfigProto(
           intra_op_parallelism_threads=1,
-          inter_op_parallelism_threads=1)
+          inter_op_parallelism_threads=1) # if this one is 2, then stable?
 else:
     print ">>> possibly using many CPUs"
     config = tf.ConfigProto()
@@ -20,6 +22,7 @@ from keras.models import Sequential, Model, load_model
 from keras.optimizers import Adam
 from sklearn.preprocessing import *
 import numpy as np
+np.random.seed(42)
 
 import argparse
 import time
@@ -28,18 +31,10 @@ import sys
 import os
 sys.path.append("../")
 
-import watch
+# import watch
 from physicsfuncs import Minv, get_metrics, cartesian_to_ptetaphi
 
 
-# ss = MinMaxScaler(feature_range=(-1.,1.))
-# ss = RobustScaler()
-# ss = SymLogScaler()
-# ss = SigmoidScaler()
-# ss = SymLogScaler()
-# ss = StandardScaler()
-# ss1 = StandardScaler()
-# ss2 = MinMaxScaler(feature_range=(-1.,1.))
 
 
 class GAN():
@@ -69,6 +64,15 @@ class GAN():
 
         os.system("mkdir -p progress/{}/".format(self.tag))
         os.system("cp gan.py progress/{}/".format(self.tag))
+
+        self.scaler_type = args.scaler_type
+        self.scaler = None
+        if args.scaler_type.lower() == "minmax":
+            self.scaler = MinMaxScaler(feature_range=(-1.,1.))
+        elif args.scaler_type.lower() == "robust":
+            self.scaler = RobustScaler()
+        elif args.scaler_type.lower() == "standard":
+            self.scaler = StandardScaler()
 
         self.data_ref = None
         self.d_epochinfo = {}
@@ -196,29 +200,6 @@ class GAN():
         # X_train = data.view((np.float32, len(data.dtype.names)))[:,range(1,22)]
         # self.data_ref = X_train[:ntest_samples][:,range(1,1+8)]
 
-        # # NOTE. StandardScaler should be fit on training set
-        # # and applied the same to train and test, otherwise we 
-        # # introduce a bias
-        # ss1.fit(X_train)
-        # X_train = ss1.transform(X_train).astype(np.float32)
-        # ss2.fit(X_train)
-        # X_train = ss2.transform(X_train).astype(np.float32)
-        # ss.fit(X_train)
-        # X_train = ss.transform(X_train).astype(np.float32)
-
-        # import pickle
-        # scalerfile = 'scaler.sav'
-        # pickle.dump(ss, open(scalerfile, 'wb'))
-
-        # print X_train
-        # for i in range(8):
-        #     print X_train[:,i].min(), X_train[:,i].max()
-        # X_train = ss.transform(X_train).astype(np.float32)
-        # print X_train
-        # print X_train[:,0].min()
-        # print X_train[:,0].max()
-        # # X_test = ss.transform(X_test).astype(np.float32)
-
         # data = np.load("data_delphes.npa")
         # X_train = np.c_[
         #         data["lep1_e"],
@@ -230,11 +211,27 @@ class GAN():
         #         data["lep2_py"],
         #         data["lep2_pz"],
         #         ]
+
         # invmass_data = data["mll"]
+        # # NOTE. StandardScaler should be fit on training set
+        # # and applied the same to train and test, otherwise we 
+        # # introduce a bias
+        if self.scaler:
+            self.scaler.fit(X_train)
+            X_train = self.scaler.transform(X_train).astype(np.float32)
+            pickle.dump(self.scaler, open("progress/{}/scaler.pkl".format(self.tag),'w'))
 
         half_batch = int(self.batch_size / 2)
 
+        prev_gen_loss = -1
+        prev_disc_loss = -1
+        n_loss_same_gen = 0  # number of epochs for which generator loss has remained ~same (within 0.01%)
+        n_loss_same_disc = 0  # number of epochs for which discriminator loss has remained ~same (within 0.01%)
         for epoch in range(self.nepochs_max):
+            
+            if n_loss_same_gen > 500 or n_loss_same_disc > 500:
+                print "BREAKING because disc/gen loss has remained the same for {}/{} epochs!".format(n_loss_same_disc,n_loss_same_gen)
+                break
 
             # ---------------------
             #  Train Discriminator
@@ -318,6 +315,14 @@ class GAN():
             # Train the generator
             g_loss = self.combined.train_on_batch(noise_full, valid_y)
 
+            if (g_loss - prev_gen_loss) < 0.0001: n_loss_same_gen += 1
+            else: n_loss_same_gen = 0
+            prev_gen_loss = g_loss
+
+            if (d_loss[0] - prev_disc_loss) < 0.0001: n_loss_same_disc += 1
+            else: n_loss_same_disc = 0
+            prev_disc_loss = d_loss[0]
+
             # Plot the progress
             print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
 
@@ -325,9 +330,8 @@ class GAN():
 
                 gen_imgs = self.generator.predict(noise_test)
 
-                # gen_imgs = ss.inverse_transform(gen_imgs)
-                # gen_imgs = ss2.inverse_transform(gen_imgs)
-                # gen_imgs = ss1.inverse_transform(gen_imgs)
+                if self.scaler:
+                    gen_imgs = self.scaler.inverse_transform(gen_imgs)
 
                 masses = Minv(gen_imgs)
                 try:
@@ -358,12 +362,12 @@ class GAN():
                     self.d_epochinfo["metric1"].append(metric1)
                     self.d_epochinfo["time"].append(time.time())
 
-                np.save("progress/{}/pred_{}.npy".format(self.tag,epoch), gen_imgs)
+                # np.save("progress/{}/pred_{}.npy".format(self.tag,epoch), gen_imgs)
                 pickle.dump(self.d_epochinfo, open("progress/{}/history.pkl".format(self.tag),'w'))
 
             if epoch % self.nepochs_dump_history == 0 and epoch > 0:
                 fname = "progress/{}/history.pkl".format(self.tag)
-                watch.update(fname)
+                # watch.update(fname)
 
             if epoch % self.nepochs_dump_models == 0 and epoch > 0: 
                 self.discriminator.save("progress/{}/disc_{}.weights".format(self.tag,epoch))
@@ -374,7 +378,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
+    
     parser.add_argument("tag", help="run tag for bookkeping in progress dir")
+    # parser.add_argument("--tag", help="run tag for bookkeping in progress dir", default="vtest")
     parser.add_argument("--input_file", help="input numpy file", default="data_xyz.npy")
     parser.add_argument("--output_size", help="size of an element to generate", default=8)
     parser.add_argument("--noise_size", help="size of noise for generator", default=8)
@@ -393,7 +399,11 @@ if __name__ == '__main__':
     parser.add_argument("--do_noisy_labels", help="flip target values in discriminator training randomly", action="store_true")
     parser.add_argument("--nepochs_decay_noisy_labels", help="characteristic decay time in nepochs for noisy label flipping", default=3000)
     parser.add_argument("--use_ptetaphi_additionally", help="instead of 8 cartesian inputs, use 8 cartesian and 8 e pt eta phi (modify output_size to be 16 then)", action="store_true")
+    parser.add_argument("--scaler_type", help="type of scaling ('minmax', 'robust', 'standard'). default is none.", default="")
     args = parser.parse_args()
+
+    if args.use_ptetaphi_additionally:
+        args.output_size = 2*int(args.output_size)
 
     gan = GAN(args)
     gan.train()
