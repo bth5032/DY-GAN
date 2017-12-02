@@ -5,10 +5,10 @@ import tensorflow as tf
 tf.set_random_seed(42)
 # if "USE_ONE_CPU" in os.environ or True:
 if "USE_ONE_CPU" in os.environ:
-    print ">>> using one CPU"
+    print ">>> using two CPUs"
     config = tf.ConfigProto(
-          intra_op_parallelism_threads=1,
-          inter_op_parallelism_threads=1) # if this one is 2, then stable?
+          intra_op_parallelism_threads=2,
+          inter_op_parallelism_threads=2) # if this one is 2, then stable?
 else:
     print ">>> possibly using many CPUs"
     config = tf.ConfigProto()
@@ -59,8 +59,11 @@ class GAN():
         self.do_batch_normalization_gen = args.do_batch_normalization_gen
         self.do_soft_labels = args.do_soft_labels
         self.do_noisy_labels = args.do_noisy_labels
+        self.do_tanh_gen = args.do_tanh_gen
         self.nepochs_decay_noisy_labels = int(args.nepochs_decay_noisy_labels)
         self.use_ptetaphi_additionally = args.use_ptetaphi_additionally
+        self.optimizer_gen = args.optimizer_gen 
+        self.optimizer_disc = args.optimizer_disc 
 
         os.system("mkdir -p progress/{}/".format(self.tag))
         os.system("cp gan.py progress/{}/".format(self.tag))
@@ -78,9 +81,9 @@ class GAN():
         self.d_epochinfo = {}
 
         # optimizer = Adam(0.0002, 0.5)
-        optimizer_d = "adadelta"
+        optimizer_d = self.optimizer_disc
         # optimizer_d = "sgd"
-        optimizer_g = "adadelta"
+        optimizer_g = self.optimizer_gen
         # optimizer_g = "adam"
 
         # Build and compile the discriminator
@@ -129,8 +132,10 @@ class GAN():
         model.add(LeakyReLU(alpha=0.2))
         model.add(Dense(32))
         model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(self.output_shape[0]))
-        # model.add(Dense(8,activation="tanh"))
+        if self.do_tanh_gen:
+            model.add(Dense(self.output_shape[0],activation="tanh"))
+        else:
+            model.add(Dense(self.output_shape[0]))
 
         model.summary()
 
@@ -181,24 +186,15 @@ class GAN():
 
         # data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
 
-        # data = np.load("data_xyz.npy")
         data = np.load(self.input_file)
         X_train = data[:,range(1,1+8)]
-
         if self.use_ptetaphi_additionally:
             X_train = np.c_[X_train, cartesian_to_ptetaphi(X_train)]
-
         self.data_ref = X_train[:self.ntest_samples]
-
-        # data = np.load("data_xyz.npy")
-        # cartesian = data[:,range(1,1+8)]
-        # ptetaphi = cartesian_to_ptetaphi(cartesian)
-        # X_train = np.c_[cartesian, ptetaphi]
-        # self.data_ref = X_train[:ntest_samples][:,range(1,1+8)]
 
         # data = np.load("../delphes/data_Nov10.npa")
         # X_train = data.view((np.float32, len(data.dtype.names)))[:,range(1,22)]
-        # self.data_ref = X_train[:ntest_samples][:,range(1,1+8)]
+        # self.data_ref = X_train[:self.ntest_samples][:,range(1,1+8)]
 
         # data = np.load("data_delphes.npa")
         # X_train = np.c_[
@@ -212,7 +208,6 @@ class GAN():
         #         data["lep2_pz"],
         #         ]
 
-        # invmass_data = data["mll"]
         # # NOTE. StandardScaler should be fit on training set
         # # and applied the same to train and test, otherwise we 
         # # introduce a bias
@@ -397,9 +392,12 @@ if __name__ == '__main__':
     parser.add_argument("--do_batch_normalization_gen", help="batch normalization for generator", action="store_true")
     parser.add_argument("--do_soft_labels", help="use 0.9 instead of 1.0 for target values in discriminator training", action="store_true")
     parser.add_argument("--do_noisy_labels", help="flip target values in discriminator training randomly", action="store_true")
+    parser.add_argument("--do_tanh_gen", help="use tanh squashing for output of generator", action="store_true")
     parser.add_argument("--nepochs_decay_noisy_labels", help="characteristic decay time in nepochs for noisy label flipping", default=3000)
     parser.add_argument("--use_ptetaphi_additionally", help="instead of 8 cartesian inputs, use 8 cartesian and 8 e pt eta phi (modify output_size to be 16 then)", action="store_true")
     parser.add_argument("--scaler_type", help="type of scaling ('minmax', 'robust', 'standard'). default is none.", default="")
+    parser.add_argument("--optimizer_disc", help="optimizer for discriminator (adadelta, adam, sgd, etc)", default="adadelta")
+    parser.add_argument("--optimizer_gen", help="optimizer for generator (adadelta, adam, sgd, etc)", default="adadelta")
     args = parser.parse_args()
 
     if args.use_ptetaphi_additionally:
