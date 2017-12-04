@@ -115,6 +115,7 @@ class GAN():
 
         model = Sequential()
 
+        ## Head
         model.add(Dense(64, input_shape=self.noise_shape))
         if self.do_batch_normalization_gen:
             model.add(BatchNormalization())
@@ -122,16 +123,25 @@ class GAN():
         if self.do_concatenate_gen:
             model.add(Lambda(lambda x: K.concatenate([x*x,x])))
             model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(128))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(128))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(128))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(64))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(32))
-        model.add(LeakyReLU(alpha=0.2))
+       
+        ## Main Body
+        if self.gen_depth and self.gen_width:
+            for level in xrange(0,self.gen_depth): 
+                model.add(Dense(gen_width/(2**level))) #Triangle with width halved at each level
+                model.add(LeakyReLU(alpha=0.2))
+        else:
+            model.add(Dense(128))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(128))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(128))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(64))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(32))
+            model.add(LeakyReLU(alpha=0.2))
+
+        ## Tail
         if self.do_tanh_gen:
             model.add(Dense(self.output_shape[0],activation="tanh"))
         else:
@@ -148,6 +158,7 @@ class GAN():
 
         model = Sequential()
 
+        ## Head
         #model.add(Dense(128,activation="relu",input_shape=gen_output_shape))
         model.add(Dense(128,input_shape=self.output_shape))
         if self.do_batch_normalization_disc:
@@ -156,24 +167,33 @@ class GAN():
         if self.do_concatenate_disc:
             model.add(Lambda(lambda x: K.concatenate([x*x,x])))
             model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(128))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(128))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(128))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(128))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(128))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(64))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(32))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(16))
-        model.add(LeakyReLU(alpha=0.2))
-        model.add(Dense(8))
-        model.add(LeakyReLU(alpha=0.2))
+
+        ## Main Body
+        if self.disc_depth and self.disc_width:
+            for level in xrange(0,self.disc_depth): 
+                model.add(Dense(disc_width/(2**level))) #Triangle with width halved at each level
+                model.add(LeakyReLU(alpha=0.2))
+        else:
+            model.add(Dense(128))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(128))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(128))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(128))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(128))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(64))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(32))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(16))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(8))
+            model.add(LeakyReLU(alpha=0.2))
+
+        ## Tail
         model.add(Dense(1,activation='sigmoid'))
         model.summary()
 
@@ -398,6 +418,10 @@ if __name__ == '__main__':
     parser.add_argument("--scaler_type", help="type of scaling ('minmax', 'robust', 'standard'). default is none.", default="")
     parser.add_argument("--optimizer_disc", help="optimizer for discriminator (adadelta, adam, sgd, etc)", default="adadelta")
     parser.add_argument("--optimizer_gen", help="optimizer for generator (adadelta, adam, sgd, etc)", default="adadelta")
+    parser.add_argument("--gen_depth", help="Number of layers in generator body, for auto generating network architectures.", type=int)
+    parser.add_argument("--gen_width", help="Max layer width in generator body, for auto generating network architectures.", type=int)
+    parser.add_argument("--disc_depth", help="Number of layers in discriminator body, for auto generating network architectures.", type=int)
+    parser.add_argument("--disc_width", help="Max layer width in discriminator body, for auto generating network architectures.", type=int)
     args = parser.parse_args()
 
     if args.use_ptetaphi_additionally:
