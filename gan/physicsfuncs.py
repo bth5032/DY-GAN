@@ -85,12 +85,12 @@ def Z_pT(eight_cartesian_cols):
 def Z_phi(eight_cartesian_cols):
     pxsum = eight_cartesian_cols[:,1]+eight_cartesian_cols[:,5]
     pysum = eight_cartesian_cols[:,2]+eight_cartesian_cols[:,6]
-    return np.arccos(pxsum/np.sqrt(pxsum**2+pysum**2))
+    return np.arctan2(pysum,pxsum)
 
 def Z_theta(eight_cartesian_cols):
-    pt = Z_pZ(eight_cartesian_cols)
+    pt = Z_pT(eight_cartesian_cols)
     pz = Z_pZ(eight_cartesian_cols)
-    return np.arccos(pt/np.sqrt(pt**2+pz**2))
+    return np.arccos(np.sign(pz)*pt/np.sqrt(pt**2+pz**2))
 
 
 

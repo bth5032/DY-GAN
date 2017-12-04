@@ -63,7 +63,7 @@ def getTrueDists(truth_4vecs, truth_masses):
     zpt    = r.TH1F("h_true_zpt"    , "zpt"    ,100,0,100)
     zpx    = r.TH1F("h_true_zpx"    , "zpx"    ,200,60,120)
     zpy    = r.TH1F("h_true_zpy"    , "zpy"    ,200,0,200)
-    zpz    = r.TH1F("h_true_zpz"    , "zpz"    ,200,0,200)
+    zpz    = r.TH1F("h_true_zpz"    , "zpz"    ,200,-1000,1000)
     ztheta = r.TH1F("h_true_ztheta" , "ztheta" ,63,-3.15,3.15)
     zphi   = r.TH1F("h_true_zphi"   , "zphi"   ,63,-3.15,3.15)
 
@@ -110,18 +110,14 @@ def generatePlots(model_dir, ngen_samples=50000):
 
   #The one liner is a bit ugly, but it just gets a list of full paths to the gen_*.weights files inside of model/model_<model_name>/
   #i.e. it finds all the models we want to run over...
-  #for saved_model in ["model/model_TruthBiased1/gen_10000.weights", "model/model_TruthBiased1/gen_20000.weights"]: #map(lambda y: "model/"+model_name+"/"+y, filter(lambda x: ("gen_" in x and ".weights" in x), os.listdir("model/"+model_name))):
-  for saved_model in map(lambda y: model_dir+y, filter(lambda x: ("gen_" in x and ".weights" in x), os.listdir(model_dir))):
+  for saved_model in [model_dir+"gen_100000.weights", model_dir+"/gen_64000.weights"]: #map(lambda y: "model/"+model_name+"/"+y, filter(lambda x: ("gen_" in x and ".weights" in x), os.listdir("model/"+model_name))):
+  # for saved_model in map(lambda y: model_dir+y, filter(lambda x: ("gen_" in x and ".weights" in x), os.listdir(model_dir))):
     if "gen_0.weights" in saved_model:
       continue
 
     print("Loading model for %s" % saved_model)
     model = load_model(saved_model)
     model.summary()
-
-    truth_data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
-    truth_masses = truth_data[:,0]
-    truth_4vecs = truth_data[:,range(1,1+8)]
     
     noise = np.random.normal(0, 1, (ngen_samples,input_size[0]-truth_4vecs.shape[1]))
     rand_rows = np.random.randint(0, truth_4vecs.shape[0], ngen_samples)
@@ -143,7 +139,7 @@ def generatePlots(model_dir, ngen_samples=50000):
     theta=pf.Z_theta(gen_output)
     phi=pf.Z_phi(gen_output)
     pt=pf.Z_pT(gen_output)
-    #dphi=pf.get_dphis(gen_output)
+    #dphi=pf.get_dphis  (gen_output)
     #dtheta=pf.get_dthetas(gen_output)
     #dpt=pf.get_dpT(gen_output)
 
@@ -155,22 +151,27 @@ def generatePlots(model_dir, ngen_samples=50000):
     h_zpt    = r.TH1F("h_zpt_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpt"    ,100,0,100)
     h_zpx    = r.TH1F("h_zpx_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpx"    ,200,60,120)
     h_zpy    = r.TH1F("h_zpy_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpy"    ,200,0,200)
-    h_zpz    = r.TH1F("h_zpz_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpz"    ,200,0,200)
+    h_zpz    = r.TH1F("h_zpz_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpz"    ,200,-1000,1000)
     h_ztheta = r.TH1F("h_ztheta_%s" % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "ztheta" ,63,-3.15,3.15)
     h_zphi   = r.TH1F("h_zphi_%s"   % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zphi"   ,63,-3.15,3.15)
+    #h_zphi   = r.TH1F("h_zphi_%s"   % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zphi"   ,63,0,6.3)
     
     #plu.fill_fast(h1, masses)
     for val in masses: h_mass.Fill(val)
+    for val in pt    : h_zpt.Fill(val)
+    for val in px    : h_zpx.Fill(val)
+    for val in py    : h_zpy.Fill(val)
+    for val in pz    : h_zpz.Fill(val)
+    for val in theta : h_ztheta.Fill(val)
+    for val in phi   : h_zphi.Fill(val)
     
     h_mass.Scale(1./h_mass.Integral())
-    h_zpt.Scale(1./h_mass.Integral())
-    h_zpx.Scale(1./h_mass.Integral())
-    h_zpy.Scale(1./h_mass.Integral())
-    h_zpz.Scale(1./h_mass.Integral())
-    h_ztheta.Scale(1./h_mass.Integral())
-    h_zphi.Scale(1./h_mass.Integral())
-
-    true_dists=getTrueDists(truth_4vecs, truth_masses)
+    h_zpt.Scale(1./h_zpt.Integral())
+    h_zpx.Scale(1./h_zpx.Integral())
+    h_zpy.Scale(1./h_zpy.Integral())
+    h_zpz.Scale(1./h_zpz.Integral())
+    h_ztheta.Scale(1./h_ztheta.Integral())
+    h_zphi.Scale(1./h_zphi.Integral())
 
     model_name=saved_model[:saved_model.index("gen_")]
     epoch=saved_model[saved_model.index("gen_")+4:saved_model.index(".weights")]
@@ -185,7 +186,7 @@ def generatePlots(model_dir, ngen_samples=50000):
     	"output_name": "%s/masses_epoch_%s.pdf" % (model_name, epoch),
     	}
         )
-    """ply.plot_hist(
+    ply.plot_hist(
         bgs=[h_zpt,true_dists["zpt"]],
         legend_labels = ["pred", "truth"],
         options = {
@@ -236,7 +237,7 @@ def generatePlots(model_dir, ngen_samples=50000):
       }
         )
     ply.plot_hist(
-        bgs=[h_phi,true_dists["zphi"]],
+        bgs=[h_zphi,true_dists["zphi"]],
         legend_labels = ["pred", "truth"],
         options = {
       "do_stack": False,
@@ -244,7 +245,14 @@ def generatePlots(model_dir, ngen_samples=50000):
       #"ratio_numden_indices": [1,0],
       "output_name": "%s/zphi_epoch_%s.pdf" % (model_name, epoch),
       }
-        )"""
+        )
+
+
+truth_data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
+truth_masses = truth_data[:,0]
+truth_4vecs = truth_data[:,range(1,1+8)]
+true_dists=getTrueDists(truth_4vecs, truth_masses)
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(add_help=False)
