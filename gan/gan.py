@@ -38,7 +38,7 @@ def appendTestQuantities(x):
     return [mass, pt1, pt2]
 
 def getMassFrom4Vecs(x):
-    return [K.sqrt((x[:,0]+x[:,4])**2 - (x[:,1]+x[:,5])**2 - (x[:,2]+x[:,6])**2 - (x[:,3]+x[:,7])**2)]
+    return K.sqrt((x[:,0:1]+x[:,4:5])**2 - (x[:,1:2]+x[:,5:6])**2 - (x[:,2:3]+x[:,6:7])**2 - (x[:,3:4]+x[:,7:8])**2)
 
 class GAN():
     def __init__(self, output_dir):
