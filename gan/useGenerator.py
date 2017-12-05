@@ -250,7 +250,8 @@ def generatePlots(model_dir, ngen_samples=50000):
 
 truth_data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
 truth_masses = truth_data[:,0]
-truth_4vecs = truth_data[:,range(1,1+8)]
+#truth_4vecs = pf.getCartRowsWithPtEtaPhiAppended(truth_data[:,1:1+8])
+truth_4vecs = truth_data[:,1:1+8]
 true_dists=getTrueDists(truth_4vecs, truth_masses)
 
 

@@ -1,7 +1,9 @@
 # from __future__ import print_function
 
+import keras.backend.tensorflow_backend as K
+
 from keras.datasets import mnist
-from keras.layers import Input, Dense, Reshape, Flatten, Dropout
+from keras.layers import Input, Dense, Reshape, Flatten, Dropout, Lambda
 from keras.layers import BatchNormalization, Activation, ZeroPadding2D
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.convolutional import UpSampling2D, Conv2D
@@ -20,15 +22,23 @@ import plottery.utils as plu
 import matplotlib.pyplot as plt
 
 import ROOT as r
-from physicsfuncs import M
+import physicsfuncs as pf
 
 import sys, os, time, argparse
 
 import numpy as np
 
 output_shape = (8,)
-input_shape = (23,)
+input_shape = (2*output_shape[0],)
 tag="test"
+
+def appendTestQuantities(x):
+    mass = getMassFrom4Vecs(x) #Need to reimpliment as not returning a vector
+    pt1, pt2 = getPtsFrom4Vecs(x)
+    return [mass, pt1, pt2]
+
+def getMassFrom4Vecs(x):
+    return [K.sqrt((x[:,0]+x[:,4])**2 - (x[:,1]+x[:,5])**2 - (x[:,2]+x[:,6])**2 - (x[:,3]+x[:,7])**2)]
 
 class GAN():
     def __init__(self, output_dir):
@@ -104,8 +114,10 @@ class GAN():
 
         model = Sequential()
 
-        #model.add(Dense(128,activation="relu",input_shape=gen_output_shape))
-        model.add(Dense(128,input_shape=output_shape))
+        #model.add(Dense(128,activation="relu",input_shape=output_shape))
+        #model.add(Lambda(lambda x: K.concatenate([x,getMassFrom4Vecs(x)]), input_shape=output_shape, output_shape=(output_shape[0]+1,)))
+        model.add(Lambda(lambda x: K.concatenate([x,getMassFrom4Vecs(x)]), input_shape=output_shape, output_shape=(9,)))
+        model.add(Dense(128))
         model.add(LeakyReLU(alpha=0.2))
         #model.add(Dense(128,activation="relu"))
         model.add(Dense(128))
@@ -144,7 +156,8 @@ class GAN():
 
     def train(self, epochs, batch_size=128, save_interval=20):
         data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
-        X_train = data[:,range(1,1+8)]
+        #X_train = pf.getCartRowsWithPtEtaPhiAppended(data[:,1:1+8])
+        X_train = data[:,1:1+8]
         invmass_data = data[:,0]
 
         half_batch = int(batch_size / 2)
@@ -203,7 +216,7 @@ class GAN():
 
     def save_imgs(self, epoch, gen_input):
         gen_output = self.generator.predict(gen_input)
-        masses=M(gen_output[:,0],gen_output[:,1],gen_output[:,2],gen_output[:,3],gen_output[:,4],gen_output[:,5],gen_output[:,6],gen_output[:,7])
+        masses=pf.M(gen_output[:,0],gen_output[:,1],gen_output[:,2],gen_output[:,3],gen_output[:,4],gen_output[:,5],gen_output[:,6],gen_output[:,7])
         print(masses.mean(), masses.std())
         np.save(output_dir+"/pred_%s.npy" % epoch, gen_output)
         if epoch % 2000 == 0: 

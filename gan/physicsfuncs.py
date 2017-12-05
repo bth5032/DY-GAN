@@ -92,7 +92,23 @@ def Z_theta(eight_cartesian_cols):
     pz = Z_pZ(eight_cartesian_cols)
     return np.arccos(np.sign(pz)*pt/np.sqrt(pt**2+pz**2))
 
+def getCartRowsWithPtEtaPhiAppended(eight_cartesian_cols):
+  """Returns the cartesian rows with pt1, pt2, theta1, theta2, phi1, phi2 for leptons appended"""
+  px1 = eight_cartesian_cols[:,1]
+  px2 = eight_cartesian_cols[:,5]
+  py1 = eight_cartesian_cols[:,2]
+  py2 = eight_cartesian_cols[:,6]
+  pz1 = eight_cartesian_cols[:,3]
+  pz2 = eight_cartesian_cols[:,7]
 
+  pt1 = np.sqrt(px1**2 + py1**2)
+  pt2 = np.sqrt(px2**2 + py2**2)
+  theta1 = np.arccos(pt1/np.sqrt(pt1**2 + pz1**2))
+  theta2 = np.arccos(pt2/np.sqrt(pt2**2 + pz2**2))
+  phi1 = np.arctan2(py1,px1)
+  phi2 = np.arctan2(py2,px2)
 
+  return np.c_[eight_cartesian_cols,pt1,theta1,phi1,pt2,theta2,phi2]
+  
 
     
