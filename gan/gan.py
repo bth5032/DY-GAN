@@ -35,6 +35,14 @@ sys.path.append("../")
 from physicsfuncs import Minv, get_metrics, cartesian_to_ptetaphi
 
 
+def add_invmass_from_8cartesian(x):
+    invmass = K.sqrt(
+                (x[:,0:1]+x[:,4:5])**2-
+                (x[:,1:2]+x[:,5:6])**2-
+                (x[:,2:3]+x[:,6:7])**2-
+                (x[:,3:4]+x[:,7:8])**2
+                )
+    return K.concatenate([x,invmass])
 
 
 class GAN():
@@ -64,6 +72,11 @@ class GAN():
         self.use_ptetaphi_additionally = args.use_ptetaphi_additionally
         self.optimizer_gen = args.optimizer_gen 
         self.optimizer_disc = args.optimizer_disc 
+        self.depth_disc = args.depth_disc 
+        self.width_disc = args.width_disc 
+        self.depth_gen = args.depth_gen 
+        self.width_gen = args.width_gen 
+        self.add_invmass_disc = args.add_invmass_disc 
 
         os.system("mkdir -p progress/{}/".format(self.tag))
         os.system("cp gan.py progress/{}/".format(self.tag))
@@ -125,9 +138,9 @@ class GAN():
             model.add(LeakyReLU(alpha=0.2))
        
         ## Main Body
-        if self.gen_depth and self.gen_width:
-            for level in xrange(0,self.gen_depth): 
-                model.add(Dense(gen_width/(2**level))) #Triangle with width halved at each level
+        if self.depth_gen > 0 and self.width_gen > 0:
+            for level in xrange(0,self.depth_gen): 
+                model.add(Dense(width_gen/(2**level))) #Triangle with width halved at each level
                 model.add(LeakyReLU(alpha=0.2))
         else:
             model.add(Dense(128))
@@ -159,19 +172,25 @@ class GAN():
         model = Sequential()
 
         ## Head
-        #model.add(Dense(128,activation="relu",input_shape=gen_output_shape))
-        model.add(Dense(128,input_shape=self.output_shape))
+        if self.add_invmass_disc:
+            model.add(Lambda(add_invmass_from_8cartesian,
+                input_shape=self.output_shape, 
+                output_shape=(self.output_shape[0]+1,), 
+                ))
+        else:
+            model.add(Dense(128,input_shape=self.output_shape))
+
         if self.do_batch_normalization_disc:
             model.add(BatchNormalization())
-        model.add(LeakyReLU(alpha=0.2))
+        # model.add(LeakyReLU(alpha=0.2))
         if self.do_concatenate_disc:
             model.add(Lambda(lambda x: K.concatenate([x*x,x])))
             model.add(LeakyReLU(alpha=0.2))
 
         ## Main Body
-        if self.disc_depth and self.disc_width:
-            for level in xrange(0,self.disc_depth): 
-                model.add(Dense(disc_width/(2**level))) #Triangle with width halved at each level
+        if self.depth_disc > 0 and self.width_disc > 0:
+            for level in xrange(0,self.depth_disc): 
+                model.add(Dense(width_disc/(2**level))) #Triangle with width halved at each level
                 model.add(LeakyReLU(alpha=0.2))
         else:
             model.add(Dense(128))
@@ -418,10 +437,11 @@ if __name__ == '__main__':
     parser.add_argument("--scaler_type", help="type of scaling ('minmax', 'robust', 'standard'). default is none.", default="")
     parser.add_argument("--optimizer_disc", help="optimizer for discriminator (adadelta, adam, sgd, etc)", default="adadelta")
     parser.add_argument("--optimizer_gen", help="optimizer for generator (adadelta, adam, sgd, etc)", default="adadelta")
-    parser.add_argument("--gen_depth", help="Number of layers in generator body, for auto generating network architectures.", type=int)
-    parser.add_argument("--gen_width", help="Max layer width in generator body, for auto generating network architectures.", type=int)
-    parser.add_argument("--disc_depth", help="Number of layers in discriminator body, for auto generating network architectures.", type=int)
-    parser.add_argument("--disc_width", help="Max layer width in discriminator body, for auto generating network architectures.", type=int)
+    parser.add_argument("--depth_gen", help="Number of layers in generator body, for auto generating network architectures.", default=0)
+    parser.add_argument("--width_gen", help="Max layer width in generator body, for auto generating network architectures.", default=0)
+    parser.add_argument("--depth_disc", help="Number of layers in discriminator body, for auto generating network architectures.", default=0)
+    parser.add_argument("--width_disc", help="Max layer width in discriminator body, for auto generating network architectures.", default=0)
+    parser.add_argument("--add_invmass_disc", help="Use lambda layer to calculate and include invariant mass in discriminator", action="store_true")
     args = parser.parse_args()
 
     if args.use_ptetaphi_additionally:
