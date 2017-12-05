@@ -423,7 +423,7 @@ if __name__ == '__main__':
     parser.add_argument("--nepochs_dump_pred_metrics", help="after how many epochs to dump test samples and metrics", default=250)
     parser.add_argument("--nepochs_dump_history", help="after how many epochs to dump history pickle and update web interface", default=500)
     parser.add_argument("--nepochs_dump_models", help="after how many epochs to dump disc and gen models", default=5000)
-    parser.add_argument("--nepochs_max", help="max number of epochs to run", default=25000)
+    parser.add_argument("--nepochs_max", help="max number of epochs to run", default=30001)
     parser.add_argument("--batch_size", help="batch size", default=200)
     parser.add_argument("--do_concatenate_disc", help="concatenation layer of x^2 for discriminator", action="store_true")
     parser.add_argument("--do_concatenate_gen", help="concatenation layer of x^2 for generator", action="store_true")
