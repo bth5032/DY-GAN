@@ -9,7 +9,7 @@ git clone https://github.com/aminnj/ProjectMetis/
 ```
 cd ProjectMetis
 source setup.sh
-cd -
+cd ..
 cp ../gan.py .          # copy over the code to this folder
 cp ../physicsfuncs.py . #
 ```
