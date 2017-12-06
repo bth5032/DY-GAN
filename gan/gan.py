@@ -236,5 +236,5 @@ if __name__ == '__main__':
     os.system("cp gan.py %s" % output_dir)
 
     gan = GAN(output_dir)
-    gan.train(epochs=100002, batch_size=10000, save_interval=20)
+    gan.train(epochs=100002, batch_size=200, save_interval=20)
 
