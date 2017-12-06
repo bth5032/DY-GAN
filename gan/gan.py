@@ -17,11 +17,11 @@ from sklearn.model_selection import train_test_split
 import sys
 sys.path.append("../")
 
-import plottery.plottery as ply
-import plottery.utils as plu
-import matplotlib.pyplot as plt
+#import plottery.plottery as ply
+#import plottery.utils as plu
+#import matplotlib.pyplot as plt
 
-import ROOT as r
+#import ROOT as r
 import physicsfuncs as pf
 
 import sys, os, time, argparse
