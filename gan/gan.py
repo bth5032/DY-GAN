@@ -16,7 +16,7 @@ config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
 
 import keras.backend.tensorflow_backend as K
-from keras.layers import Input, Dense, Reshape, Flatten, Dropout, Lambda, BatchNormalization
+from keras.layers import Input, Dense, Reshape, Flatten, Dropout, Lambda, BatchNormalization, Activation
 from keras.layers.advanced_activations import LeakyReLU
 from keras.models import Sequential, Model, load_model
 from keras.optimizers import Adam
@@ -44,6 +44,22 @@ def add_invmass_from_8cartesian(x):
                 )
     return K.concatenate([x,invmass])
 
+def fix_outputs(x):
+    """
+    Take nominal delphes format of 21 columns and fix some columns
+    """
+    return K.concatenate([
+        # x[:,0:21],
+        x[:,0:8], # epxpypz for lep1,lep2
+        K.sign(x[:,8:9]), # lep1 charge
+        x[:,9:10], # lep1 iso
+        K.sign(x[:,10:11]), # lep2 charge
+        x[:,11:12], # lep2 iso
+        K.round(x[:,12:13]), # nvtxs
+        x[:,13:15], # met, metphi
+        K.round(x[:,15:16]), # ngenjets
+        x[:,16:21], # jet pts
+        ])
 
 class GAN():
     def __init__(self, args):
@@ -76,7 +92,10 @@ class GAN():
         self.width_disc = args.width_disc 
         self.depth_gen = args.depth_gen 
         self.width_gen = args.width_gen 
+        self.beefy_generator = args.beefy_generator 
         self.add_invmass_disc = args.add_invmass_disc 
+        self.fix_delphes_outputs = args.fix_delphes_outputs
+        self.use_delphes = args.use_delphes
 
         os.system("mkdir -p progress/{}/".format(self.tag))
         os.system("cp gan.py progress/{}/".format(self.tag))
@@ -142,6 +161,22 @@ class GAN():
             for level in xrange(0,self.depth_gen): 
                 model.add(Dense(width_gen/(2**level))) #Triangle with width halved at each level
                 model.add(LeakyReLU(alpha=0.2))
+        elif self.beefy_generator:
+            model.add(Dense(128))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(256))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(512))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(1024))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(1024))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(512))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(256))
+            model.add(LeakyReLU(alpha=0.2))
+            model.add(Dense(128))
         else:
             model.add(Dense(128))
             model.add(LeakyReLU(alpha=0.2))
@@ -155,10 +190,14 @@ class GAN():
             model.add(LeakyReLU(alpha=0.2))
 
         ## Tail
+        model.add(Dense(self.output_shape[0]))
         if self.do_tanh_gen:
-            model.add(Dense(self.output_shape[0],activation="tanh"))
-        else:
-            model.add(Dense(self.output_shape[0]))
+            model.add(Activation("tanh"))
+        elif self.fix_delphes_outputs:
+            model.add(Lambda(fix_outputs,
+                input_shape=self.output_shape, 
+                output_shape=self.output_shape
+                ))
 
         model.summary()
 
@@ -225,15 +264,17 @@ class GAN():
 
         # data = np.loadtxt(open("dy_mm_events_line.input", "r"), delimiter=",", skiprows=1)
 
-        data = np.load(self.input_file)
-        X_train = data[:,range(1,1+8)]
-        if self.use_ptetaphi_additionally:
-            X_train = np.c_[X_train, cartesian_to_ptetaphi(X_train)]
-        self.data_ref = X_train[:self.ntest_samples]
 
-        # data = np.load("../delphes/data_Nov10.npa")
-        # X_train = data.view((np.float32, len(data.dtype.names)))[:,range(1,22)]
-        # self.data_ref = X_train[:self.ntest_samples][:,range(1,1+8)]
+        if self.use_delphes:
+            data = np.load(self.input_file)
+            X_train = data.view((np.float32, len(data.dtype.names)))[:,range(1,22)]
+            self.data_ref = X_train[:self.ntest_samples][:,range(1,1+8)]
+        else:
+            data = np.load(self.input_file)
+            X_train = data[:,range(1,1+8)]
+            if self.use_ptetaphi_additionally:
+                X_train = np.c_[X_train, cartesian_to_ptetaphi(X_train)]
+            self.data_ref = X_train[:self.ntest_samples]
 
         # data = np.load("data_delphes.npa")
         # X_train = np.c_[
@@ -396,6 +437,7 @@ class GAN():
                     self.d_epochinfo["metric1"].append(metric1)
                     self.d_epochinfo["time"].append(time.time())
 
+                print list(gen_imgs[0])
                 # np.save("progress/{}/pred_{}.npy".format(self.tag,epoch), gen_imgs)
                 pickle.dump(self.d_epochinfo, open("progress/{}/history.pkl".format(self.tag),'w'))
 
@@ -437,12 +479,19 @@ if __name__ == '__main__':
     parser.add_argument("--scaler_type", help="type of scaling ('minmax', 'robust', 'standard'). default is none.", default="")
     parser.add_argument("--optimizer_disc", help="optimizer for discriminator (adadelta, adam, sgd, etc)", default="adadelta")
     parser.add_argument("--optimizer_gen", help="optimizer for generator (adadelta, adam, sgd, etc)", default="adadelta")
+    parser.add_argument("--beefy_generator", help="Beefy generator architecture", action="store_true")
     parser.add_argument("--depth_gen", help="Number of layers in generator body, for auto generating network architectures.", default=0)
     parser.add_argument("--width_gen", help="Max layer width in generator body, for auto generating network architectures.", default=0)
     parser.add_argument("--depth_disc", help="Number of layers in discriminator body, for auto generating network architectures.", default=0)
     parser.add_argument("--width_disc", help="Max layer width in discriminator body, for auto generating network architectures.", default=0)
     parser.add_argument("--add_invmass_disc", help="Use lambda layer to calculate and include invariant mass in discriminator", action="store_true")
+    parser.add_argument("--fix_delphes_outputs", help="Use lambda layer at end to round generator outputs to discrete values for charge, nvtxs, etc", action="store_true")
+    parser.add_argument("--use_delphes", help="Use delphes input", action="store_true")
     args = parser.parse_args()
+
+    if args.use_delphes:
+        print "Using delphes, so hardcoding output_size to 21!!"
+        args.output_size = 21
 
     if args.use_ptetaphi_additionally:
         args.output_size = 2*int(args.output_size)
