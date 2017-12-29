@@ -25,13 +25,15 @@ import numpy as np
 input_size=(23,)
 
 def getTrueDists(truth_4vecs, truth_masses):
-  mass   = None
-  zpt    = None
-  zpx    = None
-  zpy    = None
-  zpz    = None
-  ztheta = None
-  zphi   = None
+  mass     = None
+  zpt      = None
+  zpx      = None
+  zpy      = None
+  zpz      = None
+  ztheta   = None
+  zphi     = None
+  leppx    = None
+  leppy    = None
 
   if ("true_distributions.root" in os.listdir(".")):
     f = r.TFile("true_distributions.root", "READ")
@@ -43,6 +45,8 @@ def getTrueDists(truth_4vecs, truth_masses):
     zpz    = f.Get("h_true_zpz")
     ztheta = f.Get("h_true_ztheta")
     zphi   = f.Get("h_true_zphi")
+    leppx  = f.Get("h_true_leppx")
+    leppy  = f.Get("h_true_leppy")
 
     mass   .SetDirectory(0)
     zpt    .SetDirectory(0)
@@ -51,6 +55,8 @@ def getTrueDists(truth_4vecs, truth_masses):
     zpz    .SetDirectory(0)
     ztheta .SetDirectory(0)
     zphi   .SetDirectory(0)
+    leppx  .SetDirectory(0)
+    leppy  .SetDirectory(0)
 
     f.Close()
   else:
@@ -59,13 +65,15 @@ def getTrueDists(truth_4vecs, truth_masses):
     f = r.TFile("true_distributions.root", "CREATE")
     f.cd()
 
-    mass   = r.TH1F("h_true_mass"   , "masses" ,60,60,120)
-    zpt    = r.TH1F("h_true_zpt"    , "zpt"    ,100,0,100)
-    zpx    = r.TH1F("h_true_zpx"    , "zpx"    ,200,60,120)
-    zpy    = r.TH1F("h_true_zpy"    , "zpy"    ,200,0,200)
-    zpz    = r.TH1F("h_true_zpz"    , "zpz"    ,200,-1000,1000)
-    ztheta = r.TH1F("h_true_ztheta" , "ztheta" ,63,-3.15,3.15)
-    zphi   = r.TH1F("h_true_zphi"   , "zphi"   ,63,-3.15,3.15)
+    mass   = r.TH1F("h_true_mass"     , "masses" ,60,60,120)
+    zpt    = r.TH1F("h_true_zpt"      , "zpt"    ,100,0,100)
+    zpx    = r.TH1F("h_true_zpx"      , "zpx"    ,400,-200,200)
+    zpy    = r.TH1F("h_true_zpy"      , "zpy"    ,400,-200,200)
+    zpz    = r.TH1F("h_true_zpz"      , "zpz"    ,200,-1000,1000)
+    ztheta = r.TH1F("h_true_ztheta"   , "ztheta" ,63,-3.15,3.15)
+    zphi   = r.TH1F("h_true_zphi"     , "zphi"   ,63,-3.15,3.15)
+    leppx  = r.TH1F("h_true_leppx"    , "leppx"  ,400,-200,200)
+    leppy  = r.TH1F("h_true_leppy"    , "leppy"  ,400,-200,200)
 
     mass   .SetDirectory(0)
     zpt    .SetDirectory(0)
@@ -74,6 +82,8 @@ def getTrueDists(truth_4vecs, truth_masses):
     zpz    .SetDirectory(0)
     ztheta .SetDirectory(0)
     zphi   .SetDirectory(0)
+    leppx  .SetDirectory(0)
+    leppy  .SetDirectory(0)
 
     #plu.fill_fast(h_true_mass, truthmasses)
     for val in truth_masses            : mass.Fill(val)
@@ -83,6 +93,12 @@ def getTrueDists(truth_4vecs, truth_masses):
     for val in pf.Z_pZ(truth_4vecs)    : zpz.Fill(val)
     for val in pf.Z_theta(truth_4vecs) : ztheta.Fill(val)
     for val in pf.Z_phi(truth_4vecs)   : zphi.Fill(val)
+    for val in truth_4vecs[:,[1,5]]:
+       leppx.Fill(val[0])
+       leppx.Fill(val[1])
+    for val in truth_4vecs[:,[2,6]]:
+       leppy.Fill(val[0])
+       leppy.Fill(val[1])
 
     mass   .Scale(1./mass.Integral())
     zpt    .Scale(1./zpt.Integral())
@@ -91,6 +107,9 @@ def getTrueDists(truth_4vecs, truth_masses):
     zpz    .Scale(1./zpz.Integral())
     ztheta .Scale(1./ztheta.Integral())
     zphi   .Scale(1./zphi.Integral())
+    leppx  .Scale(1./leppx.Integral())
+    leppy  .Scale(1./leppy.Integral())
+
 
     mass   .Write()
     zpt    .Write()
@@ -99,19 +118,21 @@ def getTrueDists(truth_4vecs, truth_masses):
     zpz    .Write()
     ztheta .Write()
     zphi   .Write()
+    leppx  .Write()
+    leppy  .Write()
 
     print("Saving into true_distributions.root")
 
     f.Close()
   
-  return {"mass": mass, "zpt": zpt, "zpx": zpx, "zpy": zpy, "zpz": zpz, "ztheta": ztheta, "zphi": zphi}
+  return {"mass": mass, "zpt": zpt, "zpx": zpx, "zpy": zpy, "zpz": zpz, "ztheta": ztheta, "zphi": zphi, "leppx": leppx, "leppy": leppy}
 
 def generatePlots(model_dir, ngen_samples=50000):
 
   #The one liner is a bit ugly, but it just gets a list of full paths to the gen_*.weights files inside of model/model_<model_name>/
   #i.e. it finds all the models we want to run over...
-  for saved_model in [model_dir+"gen_100000.weights", model_dir+"/gen_64000.weights"]: #map(lambda y: "model/"+model_name+"/"+y, filter(lambda x: ("gen_" in x and ".weights" in x), os.listdir("model/"+model_name))):
-  # for saved_model in map(lambda y: model_dir+y, filter(lambda x: ("gen_" in x and ".weights" in x), os.listdir(model_dir))):
+  #for saved_model in [model_dir+"gen_100000.weights", model_dir+"/gen_64000.weights"]: #map(lambda y: "model/"+model_name+"/"+y, filter(lambda x: ("gen_" in x and ".weights" in x), os.listdir("model/"+model_name))):
+  for saved_model in map(lambda y: model_dir+y, filter(lambda x: ("gen_" in x and ".weights" in x), os.listdir(model_dir))):
     if "gen_0.weights" in saved_model:
       continue
 
@@ -139,6 +160,9 @@ def generatePlots(model_dir, ngen_samples=50000):
     theta=pf.Z_theta(gen_output)
     phi=pf.Z_phi(gen_output)
     pt=pf.Z_pT(gen_output)
+    leppx=gen_output[:,[1,5]].flatten()
+    leppy=gen_output[:,[2,6]].flatten()
+
     #dphi=pf.get_dphis  (gen_output)
     #dtheta=pf.get_dthetas(gen_output)
     #dpt=pf.get_dpT(gen_output)
@@ -147,14 +171,16 @@ def generatePlots(model_dir, ngen_samples=50000):
 
     print("mean: %s, std: %s " % (masses.mean(), masses.std()))
 
-    h_mass   = r.TH1F("h_mass_%s"   % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "masses" ,60,60,120)
-    h_zpt    = r.TH1F("h_zpt_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpt"    ,100,0,100)
-    h_zpx    = r.TH1F("h_zpx_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpx"    ,200,60,120)
-    h_zpy    = r.TH1F("h_zpy_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpy"    ,200,0,200)
-    h_zpz    = r.TH1F("h_zpz_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpz"    ,200,-1000,1000)
-    h_ztheta = r.TH1F("h_ztheta_%s" % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "ztheta" ,63,-3.15,3.15)
-    h_zphi   = r.TH1F("h_zphi_%s"   % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zphi"   ,63,-3.15,3.15)
-    #h_zphi   = r.TH1F("h_zphi_%s"   % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zphi"   ,63,0,6.3)
+    h_mass   = r.TH1F("h_mass_%s"   % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "masses"   ,60,60,120)
+    h_zpt    = r.TH1F("h_zpt_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpt"      ,100,0,100)
+    h_zpx    = r.TH1F("h_zpx_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpx"      ,400,-200,200)
+    h_zpy    = r.TH1F("h_zpy_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpy"      ,400,-200,200)
+    h_zpz    = r.TH1F("h_zpz_%s"    % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zpz"      ,200,-1000,1000)
+    h_ztheta = r.TH1F("h_ztheta_%s" % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "ztheta"   ,63,-3.15,3.15)
+    h_zphi   = r.TH1F("h_zphi_%s"   % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zphi"     ,63,-3.15,3.15)
+    #h_zphi  = r.TH1F("h_zphi_%s"   % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "zphi"     ,63,0,6.3)
+    h_leppx  = r.TH1F("h_leppx_%s"  % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "leppx"    ,400,-200,200)
+    h_leppy  = r.TH1F("h_leppy_%s"  % saved_model[saved_model.index("gen_"):saved_model.index(".weights")], "leppy"    ,400,-200,200)
     
     #plu.fill_fast(h1, masses)
     for val in masses: h_mass.Fill(val)
@@ -164,14 +190,21 @@ def generatePlots(model_dir, ngen_samples=50000):
     for val in pz    : h_zpz.Fill(val)
     for val in theta : h_ztheta.Fill(val)
     for val in phi   : h_zphi.Fill(val)
+    for val in leppx : h_leppx.Fill(val)
+    for val in leppy : h_leppy.Fill(val)
     
-    h_mass.Scale(1./h_mass.Integral())
-    h_zpt.Scale(1./h_zpt.Integral())
-    h_zpx.Scale(1./h_zpx.Integral())
-    h_zpy.Scale(1./h_zpy.Integral())
-    h_zpz.Scale(1./h_zpz.Integral())
-    h_ztheta.Scale(1./h_ztheta.Integral())
-    h_zphi.Scale(1./h_zphi.Integral())
+    try:
+      h_mass.Scale(1./h_mass.Integral())
+      h_zpt.Scale(1./h_zpt.Integral())
+      h_zpx.Scale(1./h_zpx.Integral())
+      h_zpy.Scale(1./h_zpy.Integral())
+      h_zpz.Scale(1./h_zpz.Integral())
+      h_ztheta.Scale(1./h_ztheta.Integral())
+      h_zphi.Scale(1./h_zphi.Integral())
+      h_leppx.Scale(1./h_leppx.Integral())
+      h_leppy.Scale(1./h_leppy.Integral())
+    except ZeroDivisionError as e:
+      print("Skipping, got wierd distribution... %s" % e)
 
     model_name=saved_model[:saved_model.index("gen_")]
     epoch=saved_model[saved_model.index("gen_")+4:saved_model.index(".weights")]
@@ -244,6 +277,28 @@ def generatePlots(model_dir, ngen_samples=50000):
       "yaxis_log": False,
       #"ratio_numden_indices": [1,0],
       "output_name": "%s/zphi_epoch_%s.pdf" % (model_name, epoch),
+      }
+        )
+
+    ply.plot_hist(
+        bgs=[h_leppx,true_dists["leppx"]],
+        legend_labels = ["pred", "truth"],
+        options = {
+      "do_stack": False,
+      "yaxis_log": False,
+      #"ratio_numden_indices": [1,0],
+      "output_name": "%s/leppx_epoch_%s.pdf" % (model_name, epoch),
+      }
+        )
+
+    ply.plot_hist(
+        bgs=[h_leppy,true_dists["leppy"]],
+        legend_labels = ["pred", "truth"],
+        options = {
+      "do_stack": False,
+      "yaxis_log": False,
+      #"ratio_numden_indices": [1,0],
+      "output_name": "%s/leppy_epoch_%s.pdf" % (model_name, epoch),
       }
         )
 
