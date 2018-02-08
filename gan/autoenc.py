@@ -4,11 +4,11 @@ import os
 import tensorflow as tf
 tf.set_random_seed(42)
 # if "USE_ONE_CPU" in os.environ or True:
-if "USE_ONE_CPU" in os.environ:
+if "USE_ONE_CPU" in os.environ or True:
     print ">>> using two CPUs"
     config = tf.ConfigProto(
-          intra_op_parallelism_threads=2,
-          inter_op_parallelism_threads=2) # if this one is 2, then stable?
+          intra_op_parallelism_threads=1,
+          inter_op_parallelism_threads=1)
 else:
     print ">>> possibly using many CPUs"
     config = tf.ConfigProto()
@@ -200,7 +200,9 @@ class AE():
         info["deltamlls"] = deltamlls
         info["mu_deltamlls"] = deltamlls.mean()
         info["sig_deltamlls"] = deltamlls.std()
-        print info
+        print "info:",info
+
+        pickle.dump(info, open("progress/{}/history.pkl".format(self.tag),'w'))
 
 
 if __name__ == '__main__':
