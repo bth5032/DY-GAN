@@ -1,0 +1,18 @@
+You can run findBest.sh right out of the box and that should work so long as the format of logs.txt is:
+
+===================================
+epoch 500 trial <> StatsScore <> MLLKSStatistic <> MLLKSPval <> METPhiKSStatistic <> METPhiKSPval <> Lep1IsoKSStatistic <> Lep1IsoKSPval <>
+epoch 1000 trial <> StatsScore <> MLLKSStatistic <> MLLKSPval <> METPhiKSStatistic <> METPhiKSPval <> Lep1IsoKSStatistic <> Lep1IsoKSPval <>
+....
+===================================
+
+It's robust against any other log output so long as it doesn't have the string: MLLKSStatistic 
+
+Change the options at the top of findBest.sh first, everything should be output to results/
+
+----------------
+Grabbing Models
+----------------
+
+You can grab a result by running ./showResult.sh 
+Change the LogDir and RunKey in the file first.
