@@ -1,0 +1,11 @@
+/home/users/bhashemi/Projects/GIT/DY-GAN/gan/notebooks/progress/v10_batch512_bgbd_mllANDwidth_NonTC_newdata_mllfix/newlog.txt
+/home/users/bhashemi/Projects/GIT/DY-GAN/gan/notebooks/progress/v11_batch512_bgbd_mllANDwidth_NonTC_newdata_mllfix/newlog.txt
+/home/users/bhashemi/Projects/GIT/DY-GAN/gan/notebooks/progress/v12_batch512_bgbd_mllANDwidth_NonTC_newdata_mllfix/newlog.txt
+/home/users/bhashemi/Projects/GIT/DY-GAN/gan/notebooks/progress/v13_batch512_bgbd_mllANDwidth_NonTC_newdata_mllfix/newlog.txt
+/home/users/bhashemi/Projects/GIT/DY-GAN/gan/notebooks/progress/v14_batch512_bgbd_mllANDwidth_NonTC_newdata_mllfix/newlog.txt
+/home/users/bhashemi/Projects/GIT/DY-GAN/gan/notebooks/progress/v4_batch512_bgbd_mllANDwidth_NonTC_newdata_mllfix/newlog.txt
+/home/users/bhashemi/Projects/GIT/DY-GAN/gan/notebooks/progress/v5_batch512_bgbd_mllANDwidth_NonTC_newdata_mllfix/newlog.txt
+/home/users/bhashemi/Projects/GIT/DY-GAN/gan/notebooks/progress/v6_batch512_bgbd_mllANDwidth_NonTC_newdata_mllfix/newlog.txt
+/home/users/bhashemi/Projects/GIT/DY-GAN/gan/notebooks/progress/v7_batch512_bgbd_mllANDwidth_NonTC_newdata_mllfix/newlog.txt
+/home/users/bhashemi/Projects/GIT/DY-GAN/gan/notebooks/progress/v8_batch512_bgbd_mllANDwidth_NonTC_newdata_mllfix/newlog.txt
+/home/users/bhashemi/Projects/GIT/DY-GAN/gan/notebooks/progress/v9_batch512_bgbd_mllANDwidth_NonTC_newdata_mllfix/newlog.txt

@@ -54,7 +54,7 @@ class GAN():
 
         self.args = args
 
-        self.tag = "vtest"
+        self.tag = "vtest3"
         self.input_file = "data_xyz.npy"
         self.batch_size = 500
         self.nepochs_max = 50000
@@ -66,13 +66,13 @@ class GAN():
         self.scaler = None
 
         os.system("mkdir -p progress/{}/".format(self.tag))
-        os.system("cp gan.py progress/{}/".format(self.tag))
+        os.system("cp wgan.py progress/{}/".format(self.tag))
 
         self.data_ref = None
         self.d_epochinfo = {}
 
         optimizer_d = RMSprop(lr=0.001)
-        optimizer_g = RMSprop(lr=0.001)
+        optimizer_g = RMSprop(lr=0.01)
         # optimizer_d = "RMSprop"
         # optimizer_g = "RMSprop"
 
@@ -97,7 +97,7 @@ class GAN():
         # The combined model  (stacked generator and discriminator) takes
         # noise as input => generates images => determines validity 
         self.combined = Model(z, valid)
-        self.combined.compile(loss='binary_crossentropy', optimizer=optimizer_g)
+        self.combined.compile(loss=wgan_d_loss, optimizer=optimizer_g)
 
     def build_generator(self):
 
@@ -135,7 +135,7 @@ class GAN():
     def build_discriminator(self):
 
         model = Sequential()
-        weight_init = RandomNormal(mean=0., stddev=0.02)
+        weight_init = RandomNormal(mean=0.2, stddev=0.02)
 
         model.add(Dense(128,input_shape=self.output_shape,kernel_initializer=weight_init))
         model.add(BatchNormalization())
@@ -146,16 +146,35 @@ class GAN():
         # model.add(LeakyReLU(alpha=0.2))
 
         model.add(Dense(256,kernel_initializer=weight_init))
-        model.add(BatchNormalization())
+        #model.add(BatchNormalization())
         model.add(LeakyReLU(alpha=0.2))
 
-        model.add(Dense(128,kernel_initializer=weight_init))
+        model.add(Dense(512,kernel_initializer=weight_init))
+        #model.add(BatchNormalization())
         model.add(LeakyReLU(alpha=0.2))
 
+        model.add(Dense(1024,kernel_initializer=weight_init))
+        #model.add(BatchNormalization())
+        model.add(LeakyReLU(alpha=0.2))
+
+        model.add(Dense(1024,kernel_initializer=weight_init))
+        #model.add(BatchNormalization())
+        model.add(LeakyReLU(alpha=0.2))
+
+        model.add(Dense(512,kernel_initializer=weight_init))
+        #model.add(BatchNormalization())
+        model.add(LeakyReLU(alpha=0.2))
+        
+        model.add(Dense(256,kernel_initializer=weight_init))
+        #model.add(BatchNormalization())
+        model.add(LeakyReLU(alpha=0.2))
+        
         model.add(Dense(128,kernel_initializer=weight_init))
+        #model.add(BatchNormalization())
         model.add(LeakyReLU(alpha=0.2))
 
         model.add(Dense(64,kernel_initializer=weight_init))
+        #model.add(BatchNormalization())
         model.add(LeakyReLU(alpha=0.2))
 
         ## Tail
@@ -173,7 +192,7 @@ class GAN():
 
         # Tried both and same result
 
-        weights = [np.clip(w, -0.01, 0.01) for w in self.discriminator.get_weights()]
+        weights = [np.clip(w, -0.5, 0.5) for w in self.discriminator.get_weights()]
         self.discriminator.set_weights(weights)
 
         # for l in self.discriminator.layers:
@@ -195,7 +214,7 @@ class GAN():
         half_batch = int(self.batch_size / 2)
 
         prev_weights = None
-        sp = StatusPrinter(sys.stderr)
+        #sp = StatusPrinter(sys.stderr)
         tstart = time.time()
         extra = ""
         for epoch in range(self.nepochs_max):
@@ -211,7 +230,7 @@ class GAN():
             # WGAN also trains D `ncritic` times per epoch,
             # and sometimes a lot more, depending on the epoch number
             # Want to always keep D ahead of G
-            ncritic = 3
+            ncritic = 5
             if (epoch % 1000) < 15 or epoch % 500 == 0: 
                 # first 25 epochs every 1000 epochs, and every 500th epoch, we train D 50 times instead of 5
                 ncritic = 20
@@ -272,7 +291,7 @@ class GAN():
             # extra = "[D loss: %f] [G loss: %f]" % (1.-d_loss[0], 1.-g_loss)
             # sp.print_status(format_meter(epoch, self.nepochs_max, time.time()-tstart, size=25,extra=extra))
 
-            if epoch % self.nepochs_dump_pred_metrics == 0 and epoch > 0:
+            if epoch % self.nepochs_dump_pred_metrics in (self.nepochs_dump_pred_metrics-2, self.nepochs_dump_pred_metrics-1, 0, 1, 2) and epoch > 3:
 
                 noise_test = np.random.normal(0, 1, (500,self.noise_shape[0]))
                 gen_imgs = self.generator.predict(noise_test)
@@ -310,6 +329,8 @@ class GAN():
                     self.d_epochinfo["time"].append(time.time())
 
                 pickle.dump(self.d_epochinfo, open("progress/{}/history.pkl".format(self.tag),'w'))
+                print("Avg Mass:", self.d_epochinfo["mass_mu"])
+                self.generator.save("%s/gen_%i.weights" % ("progress/{}".format(self.tag), epoch))
 
             if epoch % self.nepochs_dump_history == 0 and epoch > 0:
                 fname = "progress/{}/history.pkl".format(self.tag)
